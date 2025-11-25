@@ -213,6 +213,31 @@ class ApiService {
     }
   }
 
+  // 키워드 추출
+  static Future<String> extractKeyword(String text) async {
+    try {
+      final headers = await AuthService.getAuthHeaders();
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/extract-keyword'),
+            headers: headers,
+            body: json.encode({'text': text}),
+          )
+          .timeout(Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['extracted_keyword'] ?? text;
+      } else {
+        print('Keyword extraction failed, using original text');
+        return text;
+      }
+    } catch (e) {
+      print('API Error (extractKeyword): $e');
+      return text; // 실패 시 원본 텍스트 반환
+    }
+  }
+
   // ========== PDF 및 폴더 관리 API ==========
   
   // 폴더 목록 조회

@@ -88,7 +88,7 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
   }
 
   // 학습 시작
-  void _startLearningWithText(String concept) async {
+  void _startLearningWithText(String selectedText) async {
     try {
       showDialog(
         context: context,
@@ -102,7 +102,7 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 16),
-                  Text('학습 준비 중...'),
+                  Text('키워드 추출 중...'),
                 ],
               ),
             ),
@@ -110,11 +110,45 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
         ),
       );
 
-      final room = await ApiService.createChatRoom('$concept 학습');
+      // 1단계: 선택된 텍스트에서 핵심 키워드 추출
+      print('📝 선택된 텍스트: $selectedText');
+      final extractedKeyword = await ApiService.extractKeyword(selectedText);
+      print('🔑 추출된 키워드: $extractedKeyword');
+
+      // 로딩 메시지 업데이트
+      Navigator.pop(context);
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('학습 준비 중...'),
+                  SizedBox(height: 8),
+                  Text(
+                    '주제: $extractedKeyword',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // 2단계: 채팅방 생성 및 PDF 연결
+      final room = await ApiService.createChatRoom('$extractedKeyword 학습');
       await ApiService.linkPDFToRoom(room.id, widget.pdfFile.id);
 
       Navigator.pop(context);
 
+      // 3단계: 학습 화면으로 이동
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(
           context,
@@ -122,7 +156,7 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
           (route) => false,
           arguments: {
             'roomId': room.id,
-            'concept': concept,
+            'concept': extractedKeyword,  // 추출된 키워드 사용
           },
         );
       }

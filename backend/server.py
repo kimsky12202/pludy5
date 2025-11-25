@@ -100,6 +100,13 @@ class MessageCreate(BaseModel):
     role: str
     phase: str
 
+class KeywordExtractionRequest(BaseModel):
+    text: str
+
+class KeywordExtractionResponse(BaseModel):
+    original_text: str
+    extracted_keyword: str
+
 # ========== 인증 관련 Pydantic 모델 ==========
 class UserRegister(BaseModel):
     email: str
@@ -547,6 +554,15 @@ async def get_current_phase(room_id: str, db: Session = Depends(get_db)):
         "title": flow_manager.get_phase_title(phase),
         "can_go_back": flow_manager.can_go_back(phase)
     }
+
+@app.post("/api/extract-keyword", response_model=KeywordExtractionResponse)
+async def extract_keyword(request: KeywordExtractionRequest):
+    """텍스트에서 핵심 키워드 추출"""
+    keyword = await extract_concept_keyword(request.text)
+    return KeywordExtractionResponse(
+        original_text=request.text,
+        extracted_keyword=keyword
+    )
 
 # ========== PDF 파일 관리 API ==========
 @app.post("/api/pdf/upload", response_model=PDFFileResponse)
