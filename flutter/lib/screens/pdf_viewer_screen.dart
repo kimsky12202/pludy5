@@ -102,39 +102,7 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 16),
-                  Text('키워드 추출 중...'),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-
-      // 1단계: 선택된 텍스트에서 핵심 키워드 추출
-      print('📝 선택된 텍스트: $selectedText');
-      final extractedKeyword = await ApiService.extractKeyword(selectedText);
-      print('🔑 추출된 키워드: $extractedKeyword');
-
-      // 로딩 메시지 업데이트
-      Navigator.pop(context);
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => Center(
-          child: Card(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
                   Text('학습 준비 중...'),
-                  SizedBox(height: 8),
-                  Text(
-                    '주제: $extractedKeyword',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
                 ],
               ),
             ),
@@ -142,17 +110,24 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
         ),
       );
 
-      // 2단계: 채팅방 생성 및 PDF 연결
-      final room = await ApiService.createChatRoom('$extractedKeyword 학습');
+      print('📝 선택된 텍스트: $selectedText');
+
+      // 1단계: 채팅방 생성 (원본 텍스트로 제목 생성)
+      final displayText = selectedText.length > 20
+          ? '${selectedText.substring(0, 20)}...'
+          : selectedText;
+      final room = await ApiService.createChatRoom('$displayText 학습');
+
+      // 2단계: PDF 연결
       await ApiService.linkPDFToRoom(room.id, widget.pdfFile.id);
 
-      // 3단계: 백엔드 학습 초기화 (current_concept 저장 + 단계를 KNOWLEDGE_CHECK로 설정)
-      // (채팅 화면 방식과 동일한 상태로 초기화)
-      await ApiService.initializeLearning(room.id, extractedKeyword);
+      // 3단계: 백엔드 학습 초기화 (원본 텍스트 그대로 전달)
+      // 백엔드에서 키워드 추출은 내부적으로 처리
+      await ApiService.initializeLearning(room.id, selectedText);
 
       Navigator.pop(context);
 
-      // 3단계: 학습 화면으로 이동
+      // 4단계: 학습 화면으로 이동 (원본 텍스트 사용)
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(
           context,
@@ -160,7 +135,7 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
           (route) => false,
           arguments: {
             'roomId': room.id,
-            'concept': extractedKeyword,  // 추출된 키워드 사용
+            'concept': selectedText,  // 원본 텍스트 그대로 사용
           },
         );
       }
