@@ -129,7 +129,22 @@ class _ChatScreenState extends State<ChatScreen> {
   // 지식 확인 화면으로 이동
   Future<void> _navigateToKnowledgeCheck() async {
     if (_currentRoom == null) return;
-    
+
+    // 최신 room 정보 가져오기 (current_concept 업데이트를 위해)
+    try {
+      final rooms = await ApiService.getChatRooms();
+      final updatedRoom = rooms.firstWhere(
+        (room) => room.id == _currentRoom!.id,
+        orElse: () => _currentRoom!,
+      );
+
+      setState(() {
+        _currentRoom = updatedRoom;
+      });
+    } catch (e) {
+      print('Failed to refresh room: $e');
+    }
+
     // 화면 전환
     await Navigator.pushNamed(
       context,
@@ -139,7 +154,7 @@ class _ChatScreenState extends State<ChatScreen> {
         'roomId': _currentRoom!.id,
       },
     );
-    
+
     // 학습 완료 후 돌아왔을 때 메시지 다시 로드
     await _loadPreviousMessages(_currentRoom!.id);
     // 화면에서 돌아왔을 때 단계 재조회
