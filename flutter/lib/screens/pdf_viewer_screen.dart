@@ -146,6 +146,10 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
       final room = await ApiService.createChatRoom('$extractedKeyword 학습');
       await ApiService.linkPDFToRoom(room.id, widget.pdfFile.id);
 
+      // 3단계: 백엔드 학습 초기화 (current_concept 저장 + 단계를 KNOWLEDGE_CHECK로 설정)
+      // (채팅 화면 방식과 동일한 상태로 초기화)
+      await ApiService.initializeLearning(room.id, extractedKeyword);
+
       Navigator.pop(context);
 
       // 3단계: 학습 화면으로 이동
