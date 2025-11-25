@@ -20,6 +20,7 @@ class LearningFlowManager:
         LearningPhase.SELF_REFLECTION_2: LearningPhase.EVALUATION,
         LearningPhase.EVALUATION: {
             "retry": LearningPhase.SECOND_EXPLANATION,
+            "restart": LearningPhase.KNOWLEDGE_CHECK,
             "complete": LearningPhase.HOME
         }
     }

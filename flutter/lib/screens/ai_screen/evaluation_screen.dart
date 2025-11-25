@@ -108,9 +108,21 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
           IconButton(
             icon: Icon(Icons.home),
             tooltip: '홈으로',
-            onPressed: () {
-              // ChatScreen으로 돌아가기
-              Navigator.popUntil(context, (route) => route.isFirst);
+            onPressed: () async {
+              try {
+                // 백엔드 단계를 HOME으로 변경
+                await ApiService.transitionPhase(widget.roomId, 'complete');
+                // 채팅 화면으로 이동
+                if (mounted) {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/home',
+                    (route) => false,
+                  );
+                }
+              } catch (e) {
+                print('Error: $e');
+              }
             },
           ),
         ],
@@ -318,9 +330,28 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {
-                          // TODO: 다시 학습하기 기능
-                          Navigator.popUntil(context, (route) => route.isFirst);
+                        onPressed: () async {
+                          try {
+                            // 백엔드 단계를 KNOWLEDGE_CHECK로 재설정
+                            await ApiService.transitionPhase(widget.roomId, 'restart');
+                            // knowledge_check 화면으로 이동
+                            if (mounted) {
+                              Navigator.pushNamedAndRemoveUntil(
+                                context,
+                                '/knowledge_check',
+                                (route) => false,
+                                arguments: {
+                                  'roomId': widget.roomId,
+                                  'concept': widget.concept,
+                                },
+                              );
+                            }
+                          } catch (e) {
+                            print('Error: $e');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('오류가 발생했습니다: $e')),
+                            );
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.grey.shade300,
@@ -352,11 +383,19 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                       child: ElevatedButton(
                         onPressed: () async {
                           try {
-                              await ApiService.transitionPhase(widget.roomId, 'complete');
-                              Navigator.popUntil(context, (route) => route.isFirst);
-                            } catch (e) {
-                              print('Error: $e');
+                            // 백엔드 단계를 HOME으로 변경
+                            await ApiService.transitionPhase(widget.roomId, 'complete');
+                            // 채팅 화면으로 이동
+                            if (mounted) {
+                              Navigator.pushNamedAndRemoveUntil(
+                                context,
+                                '/home',
+                                (route) => false,
+                              );
                             }
+                          } catch (e) {
+                            print('Error: $e');
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,

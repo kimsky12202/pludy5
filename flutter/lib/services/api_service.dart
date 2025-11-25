@@ -213,6 +213,52 @@ class ApiService {
     }
   }
 
+  // 키워드 추출
+  static Future<String> extractKeyword(String text) async {
+    try {
+      final headers = await AuthService.getAuthHeaders();
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/extract-keyword'),
+            headers: headers,
+            body: json.encode({'text': text}),
+          )
+          .timeout(Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['extracted_keyword'] ?? text;
+      } else {
+        print('Keyword extraction failed, using original text');
+        return text;
+      }
+    } catch (e) {
+      print('API Error (extractKeyword): $e');
+      return text; // 실패 시 원본 텍스트 반환
+    }
+  }
+
+  // 학습 초기화 (PDF 뷰어에서 학습 시작 시)
+  static Future<void> initializeLearning(String roomId, String concept) async {
+    try {
+      final headers = await AuthService.getAuthHeaders();
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/rooms/$roomId/initialize-learning'),
+            headers: headers,
+            body: json.encode({'concept': concept}),
+          )
+          .timeout(Duration(seconds: 10));
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to initialize learning');
+      }
+    } catch (e) {
+      print('API Error (initializeLearning): $e');
+      throw e;
+    }
+  }
+
   // ========== PDF 및 폴더 관리 API ==========
   
   // 폴더 목록 조회

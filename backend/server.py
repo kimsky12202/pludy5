@@ -100,6 +100,16 @@ class MessageCreate(BaseModel):
     role: str
     phase: str
 
+class KeywordExtractionRequest(BaseModel):
+    text: str
+
+class KeywordExtractionResponse(BaseModel):
+    original_text: str
+    extracted_keyword: str
+
+class InitializeLearningRequest(BaseModel):
+    concept: str
+
 # ========== 인증 관련 Pydantic 모델 ==========
 class UserRegister(BaseModel):
     email: str
@@ -546,6 +556,44 @@ async def get_current_phase(room_id: str, db: Session = Depends(get_db)):
         "instruction": flow_manager.get_phase_instruction(phase),
         "title": flow_manager.get_phase_title(phase),
         "can_go_back": flow_manager.can_go_back(phase)
+    }
+
+@app.post("/api/extract-keyword", response_model=KeywordExtractionResponse)
+async def extract_keyword(request: KeywordExtractionRequest):
+    """텍스트에서 핵심 키워드 추출"""
+    keyword = await extract_concept_keyword(request.text)
+    return KeywordExtractionResponse(
+        original_text=request.text,
+        extracted_keyword=keyword
+    )
+
+@app.post("/api/rooms/{room_id}/initialize-learning")
+async def initialize_learning(
+    room_id: str,
+    request: InitializeLearningRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """채팅방의 학습 초기화 (PDF 뷰어에서 학습 시작 시 사용)"""
+    room = db.query(models.ChatRoom).filter(
+        models.ChatRoom.id == room_id,
+        models.ChatRoom.user_id == current_user.id
+    ).first()
+
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    # 학습 개념과 단계 설정
+    room.current_concept = request.concept
+    room.learning_phase = LearningPhase.KNOWLEDGE_CHECK.value
+    db.commit()
+
+    print(f"📚 학습 초기화: Room {room_id}, Concept: {request.concept}, Phase: KNOWLEDGE_CHECK")
+
+    return {
+        "room_id": room_id,
+        "concept": request.concept,
+        "phase": LearningPhase.KNOWLEDGE_CHECK.value
     }
 
 # ========== PDF 파일 관리 API ==========
