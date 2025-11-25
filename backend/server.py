@@ -583,16 +583,23 @@ async def initialize_learning(
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
 
-    # 학습 개념과 단계 설정
+    # 원본 텍스트를 그대로 저장 (채팅 방식과 동일)
     room.current_concept = request.concept
     room.learning_phase = LearningPhase.KNOWLEDGE_CHECK.value
     db.commit()
 
-    print(f"📚 학습 초기화: Room {room_id}, Concept: {request.concept}, Phase: KNOWLEDGE_CHECK")
+    # 키워드 추출은 내부적으로만 사용 (표시용)
+    keyword = await extract_concept_keyword(request.concept)
+
+    print(f"📚 학습 초기화: Room {room_id}")
+    print(f"   원본 텍스트: {request.concept}")
+    print(f"   추출된 키워드: {keyword}")
+    print(f"   단계: KNOWLEDGE_CHECK")
 
     return {
         "room_id": room_id,
-        "concept": request.concept,
+        "concept": request.concept,  # 원본 텍스트 반환
+        "keyword": keyword,  # 키워드는 참고용
         "phase": LearningPhase.KNOWLEDGE_CHECK.value
     }
 
