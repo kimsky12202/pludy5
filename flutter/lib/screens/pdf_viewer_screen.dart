@@ -38,6 +38,12 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
   void _showTextSelectionMenu() {
     if (_selectedText == null || _selectedText!.isEmpty) return;
 
+    // 선택된 텍스트를 임시 저장
+    final selectedTextCopy = _selectedText!;
+
+    // Syncfusion 기본 메뉴를 닫기 위해 텍스트 선택 해제
+    _pdfViewerController.clearSelection();
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -55,7 +61,7 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                _selectedText!,
+                selectedTextCopy,
                 style: TextStyle(fontSize: 14),
                 maxLines: 5,
                 overflow: TextOverflow.ellipsis,
@@ -71,7 +77,7 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _startLearningWithText(_selectedText!);
+              _startLearningWithText(selectedTextCopy);
             },
             child: Text('시작'),
           ),
@@ -150,7 +156,6 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
         controller: _pdfViewerController,
         onTextSelectionChanged: _handleTextSelection,
         enableTextSelection: true,
-        canShowTextSelectionMenu: false,  // 기본 텍스트 선택 메뉴 비활성화
         canShowScrollHead: true,
         canShowScrollStatus: true,
         pageLayoutMode: PdfPageLayoutMode.continuous,
