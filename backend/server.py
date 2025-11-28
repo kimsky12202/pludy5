@@ -79,7 +79,9 @@ class ChatRoomResponse(BaseModel):
     title: str
     created_at: datetime
     updated_at: datetime
-    
+    current_concept: Optional[str] = None
+    learning_phase: Optional[str] = None
+
     class Config:
         from_attributes = True
 
@@ -1024,8 +1026,9 @@ async def websocket_endpoint_with_feynman(
                 room.current_concept = user_message
                 room.learning_phase = LearningPhase.KNOWLEDGE_CHECK.value
                 db.commit()
-    
-                print(f"💾 개념 저장: '{concept_keyword}'")
+
+                print(f"💾 원본 텍스트 저장: '{user_message}'")
+                print(f"🔍 추출된 키워드: '{concept_keyword}'")
                 print(f"🔄 단계 전환: HOME → KNOWLEDGE_CHECK")
     
             # AI 응답 없이 바로 단계 전환 알림
