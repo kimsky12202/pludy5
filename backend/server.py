@@ -585,18 +585,18 @@ async def initialize_learning(
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
 
-    # 원본 텍스트를 그대로 저장 (채팅 방식과 동일)
+    # PDF 경로: 선택한 텍스트 범위 그대로 저장 (채팅 경로와 구분)
     room.current_concept = request.concept
     room.learning_phase = LearningPhase.KNOWLEDGE_CHECK.value
     db.commit()
 
-    # 키워드 추출은 내부적으로만 사용 (표시용)
+    # 키워드 추출은 로그 표시용으로만 사용
     keyword = await extract_concept_keyword(request.concept)
 
-    print(f"📚 학습 초기화: Room {room_id}")
-    print(f"   원본 텍스트: {request.concept}")
-    print(f"   추출된 키워드: {keyword}")
-    print(f"   단계: KNOWLEDGE_CHECK")
+    print(f"📄 PDF 학습 초기화: Room {room_id}")
+    print(f"💾 선택된 텍스트 저장: {request.concept}")
+    print(f"🔍 참고 키워드: {keyword}")
+    print(f"🔄 단계: KNOWLEDGE_CHECK")
 
     return {
         "room_id": room_id,
@@ -1022,13 +1022,13 @@ async def websocket_endpoint_with_feynman(
                 # 키워드 추출
                 concept_keyword = await extract_concept_keyword(user_message)
 
-                # 개념 저장
-                room.current_concept = user_message
+                # 채팅 경로: 키워드만 저장 (PDF 경로와 구분)
+                room.current_concept = concept_keyword
                 room.learning_phase = LearningPhase.KNOWLEDGE_CHECK.value
                 db.commit()
 
-                print(f"💾 원본 텍스트 저장: '{user_message}'")
-                print(f"🔍 추출된 키워드: '{concept_keyword}'")
+                print(f"💬 채팅 메시지: '{user_message}'")
+                print(f"💾 추출된 키워드 저장: '{concept_keyword}'")
                 print(f"🔄 단계 전환: HOME → KNOWLEDGE_CHECK")
     
             # AI 응답 없이 바로 단계 전환 알림
