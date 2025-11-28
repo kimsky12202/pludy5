@@ -35,6 +35,7 @@ class ChatRoom(Base):
 
     learning_phase = Column(String(50), default="home")
     current_concept = Column(String(500), nullable=True)
+    original_question = Column(Text, nullable=True)  # 원본 질문 저장 (맥락 보존용)
     knowledge_level = Column(Integer, default=0)
     
     user = relationship("User", back_populates="chat_rooms")

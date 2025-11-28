@@ -263,6 +263,57 @@ async def extract_concept_keyword(user_message: str) -> str:
         print(f"⚠️ 키워드 추출 오류: {e}, 원본 사용")
         return user_message
 
+# ========== RAG 쿼리 생성 함수 (학습 단계별 최적화) ==========
+def get_rag_query_for_phase(phase: LearningPhase, concept: str, message: str, original_question: str = None) -> str:
+    """
+    학습 단계에 맞는 RAG 검색 쿼리 생성
+
+    Args:
+        phase: 현재 학습 단계
+        concept: 추출된 키워드
+        message: 사용자의 현재 메시지
+        original_question: 원본 질문 (맥락 정보)
+
+    Returns:
+        최적화된 RAG 검색 쿼리
+    """
+
+    # 기본 쿼리: 개념 + 현재 메시지
+    base_query = f"{concept} {message}".strip()
+
+    if phase == LearningPhase.KNOWLEDGE_CHECK:
+        # 지식 확인 단계: 기본 개념 정의와 설명 검색
+        query = f"{concept} 정의 개념 설명"
+        if original_question:
+            # 원본 질문에서 맥락 키워드 추출하여 추가
+            query = f"{query} {original_question}"
+        return query
+
+    elif phase == LearningPhase.AI_EXPLANATION:
+        # AI 설명 단계: 상세 설명, 예시, 비유 관련 자료 검색
+        query = f"{concept} 설명 예시 비유"
+        if original_question:
+            query = f"{query} {original_question}"
+        return query
+
+    elif phase == LearningPhase.EVALUATION:
+        # 평가 단계: 평가 기준, 핵심 요소 관련 자료 검색
+        return f"{concept} 핵심 요소 평가 기준"
+
+    elif phase in [LearningPhase.FIRST_EXPLANATION, LearningPhase.SECOND_EXPLANATION]:
+        # 설명 단계: 현재 메시지(사용자 설명)와 관련된 내용 검색
+        if original_question:
+            return f"{concept} {message} {original_question}"
+        return base_query
+
+    elif phase in [LearningPhase.SELF_REFLECTION_1, LearningPhase.SELF_REFLECTION_2]:
+        # 자기 성찰 단계: 일반적인 검색
+        return base_query
+
+    else:
+        # 기타 단계: 기본 쿼리 사용
+        return base_query
+
 # ========== 기존 엔드포인트 유지 ==========
 @app.get("/")
 async def root():
@@ -587,6 +638,7 @@ async def initialize_learning(
 
     # PDF 경로: 선택한 텍스트 범위 그대로 저장 (채팅 경로와 구분)
     room.current_concept = request.concept
+    room.original_question = request.concept  # PDF 선택 텍스트도 원본으로 저장 (맥락 보존)
     room.learning_phase = LearningPhase.KNOWLEDGE_CHECK.value
     db.commit()
 
@@ -595,6 +647,7 @@ async def initialize_learning(
 
     print(f"📄 PDF 학습 초기화: Room {room_id}")
     print(f"💾 선택된 텍스트 저장: {request.concept}")
+    print(f"📝 원본 텍스트 저장: {request.concept}")
     print(f"🔍 참고 키워드: {keyword}")
     print(f"🔄 단계: KNOWLEDGE_CHECK")
 
@@ -983,15 +1036,27 @@ async def websocket_endpoint_with_feynman(
                 })
                 continue
 
+            # 현재 학습 단계 확인 (RAG 쿼리 생성에 필요)
+            current_phase = LearningPhase(room.learning_phase or "home")
+
             # RAG 컨텍스트 검색 (채팅방에 연결된 PDF에서만)
             rag_context = ""
             if room.pdf_id:
                 # 채팅방에 PDF가 연결되어 있으면
                 if rag_system.has_pdf(room.user_id, room.pdf_id):
+                    # 학습 단계별 최적화된 쿼리 생성
+                    rag_query = get_rag_query_for_phase(
+                        phase=current_phase,
+                        concept=room.current_concept or "",
+                        message=user_message,
+                        original_question=getattr(room, 'original_question', None)
+                    )
+                    print(f"🔍 RAG 검색 쿼리 (단계: {current_phase.value}): '{rag_query}'")
+
                     contexts = rag_system.search_by_pdf(
                         user_id=room.user_id,
                         pdf_id=room.pdf_id,
-                        query=user_message,
+                        query=rag_query,  # 최적화된 쿼리 사용
                         n_results=5
                     )
                     if contexts:
@@ -999,9 +1064,6 @@ async def websocket_endpoint_with_feynman(
                         for ctx in contexts:
                             rag_context += f"[{ctx['filename']} - Page {ctx['page']}] {ctx['content'][:200]}...\n\n"
                         print(f"📚 RAG 컨텍스트 추가됨 ({len(contexts)}개, PDF: {room.pdf_id})")
-            
-            # 현재 학습 단계 확인
-            current_phase = LearningPhase(room.learning_phase or "home")
             
             # 사용자 메시지 저장 (단계 정보 포함)
             user_msg = models.Message(
@@ -1022,13 +1084,15 @@ async def websocket_endpoint_with_feynman(
                 # 키워드 추출
                 concept_keyword = await extract_concept_keyword(user_message)
 
-                # 채팅 경로: 키워드만 저장 (PDF 경로와 구분)
+                # 채팅 경로: 키워드 + 원본 질문 모두 저장
                 room.current_concept = concept_keyword
+                room.original_question = user_message  # 원본 질문 보존 (맥락 보존)
                 room.learning_phase = LearningPhase.KNOWLEDGE_CHECK.value
                 db.commit()
 
                 print(f"💬 채팅 메시지: '{user_message}'")
                 print(f"💾 추출된 키워드 저장: '{concept_keyword}'")
+                print(f"📝 원본 질문 저장: '{user_message}'")
                 print(f"🔄 단계 전환: HOME → KNOWLEDGE_CHECK")
     
             # AI 응답 없이 바로 단계 전환 알림
@@ -1076,6 +1140,7 @@ async def websocket_endpoint_with_feynman(
             # 컨텍스트 준비
             context = {
                 "concept": room.current_concept if hasattr(room, 'current_concept') else None,
+                "original_question": getattr(room, 'original_question', None),  # 원본 질문 (맥락 정보)
                 "knowledge_level": room.knowledge_level if hasattr(room, 'knowledge_level') else 0,
                 "analysis": analysis,
                 "phase": current_phase.value
