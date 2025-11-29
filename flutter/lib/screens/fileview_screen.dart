@@ -324,8 +324,6 @@ class FileViewScreenState extends State<FileViewScreen> with WidgetsBindingObser
             Text(_currentFolderName),
           ],
         ),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
         actions: [
           if (_isDeleteMode)
             // 삭제 모드일 때

@@ -4,7 +4,7 @@ import 'planner_screens/planner_screen.dart';
 import 'quiz/quiz_home_screen.dart';
 import './chat_screen.dart';
 import './fileview_screen.dart';
-import './setting_screen.dart';
+import './settings_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -27,7 +27,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       QuizHomeScreen(),
       ChatScreen(), // ChatScreen은 const 생성자가 없음
       FileViewScreen(key: _fileViewKey),
-      const SettingScreen(),
+      const SettingsScreen(),
     ];
   }
 

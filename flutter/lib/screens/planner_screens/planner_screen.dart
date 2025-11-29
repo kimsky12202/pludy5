@@ -411,11 +411,11 @@ class _TimetableViewState extends State<TimetableView> {
   }
 
   // 시간표 텍스트 스타일
-  TextStyle _getTimetableTextStyle() {
-    return const TextStyle(
+  TextStyle _getTimetableTextStyle(BuildContext context) {
+    return TextStyle(
       fontSize: 12,
       fontWeight: FontWeight.normal,
-      color: Colors.black,
+      color: Theme.of(context).colorScheme.onSurface,
     );
   }
 
@@ -518,7 +518,7 @@ class _TimetableViewState extends State<TimetableView> {
                                   date.month == DateTime.now().month &&
                                   date.year == DateTime.now().year
                               ? Colors.blue
-                              : Colors.black,
+                              : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ],
@@ -624,7 +624,7 @@ class _TimetableViewState extends State<TimetableView> {
                         padding: const EdgeInsets.all(2.0),
                         child: Text(
                           schedule.title,
-                          style: _getTimetableTextStyle().copyWith(
+                          style: _getTimetableTextStyle(context).copyWith(
                             fontSize: 9,
                             color: Colors.white, // 배경색에 맞춰 흰색 유지
                             decoration:
