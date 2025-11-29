@@ -3,10 +3,10 @@ Schedule 테이블의 color 컬럼을 Integer에서 BigInteger로 변경하는 �
 Flutter Color.value는 unsigned 32-bit (0 ~ 4294967295)이므로 BigInteger 필요
 """
 from sqlalchemy import create_engine, text
-from database import SQLALCHEMY_DATABASE_URL
+from database import DATABASE_URL
 
 def migrate():
-    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+    engine = create_engine(DATABASE_URL)
 
     with engine.connect() as conn:
         print("📝 Schedule 테이블의 color 컬럼 타입 변경 중...")
