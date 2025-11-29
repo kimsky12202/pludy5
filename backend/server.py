@@ -532,20 +532,25 @@ class GoalResponse(BaseModel):
         populate_by_name = True
 
 class ScheduleCreate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     date: datetime
     title: str
     description: Optional[str] = None
-    start_time: Optional[str] = None  # HH:MM
-    end_time: Optional[str] = None    # HH:MM
+    start_time: Optional[str] = Field(None, validation_alias='startTime')  # HH:MM
+    end_time: Optional[str] = Field(None, validation_alias='endTime')    # HH:MM
+    is_completed: Optional[bool] = Field(None, validation_alias='isCompleted')
     color: Optional[int] = None
 
 class ScheduleUpdate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     date: Optional[datetime] = None
     title: Optional[str] = None
     description: Optional[str] = None
-    start_time: Optional[str] = None
-    end_time: Optional[str] = None
-    is_completed: Optional[bool] = None
+    start_time: Optional[str] = Field(None, validation_alias='startTime')
+    end_time: Optional[str] = Field(None, validation_alias='endTime')
+    is_completed: Optional[bool] = Field(None, validation_alias='isCompleted')
     color: Optional[int] = None
 
 class ScheduleResponse(BaseModel):
