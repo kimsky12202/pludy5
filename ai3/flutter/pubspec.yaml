@@ -1,0 +1,38 @@
+name: capstone
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 네트워킹
+  web_socket_channel: ^3.0.3
+  http: ^1.5.0
+
+  # 상태관리
+  provider: ^6.1.5
+
+  # 로컬 저장소
+  shared_preferences: ^2.2.2
+
+  # UI
+  flutter_markdown: ^0.7.7+1
+  intl: ^0.20.2
+  cupertino_icons: ^1.0.8
+  
+  # 파일 선택
+  file_picker: ^8.1.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
