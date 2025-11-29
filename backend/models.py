@@ -23,6 +23,10 @@ class User(Base):
     folders = relationship("Folder", back_populates="user", cascade="all, delete-orphan")
     pdf_files = relationship("PDFFile", back_populates="user", cascade="all, delete-orphan")
 
+    # Quiz 시스템 relationships
+    quizzes = relationship("Quiz", back_populates="user", cascade="all, delete-orphan")
+    progress = relationship("UserProgress", back_populates="user", cascade="all, delete-orphan")
+
 class ChatRoom(Base):
     __tablename__ = "chat_rooms"
     
@@ -128,4 +132,65 @@ class Subject(Base):
     semester = Column(Integer, nullable=False) # 학기 (1, 2)
 
     user = relationship("User")
+
+# ========== Quiz 시스템 모델 ==========
+class Quiz(Base):
+    """퀴즈 모델"""
+    __tablename__ = "quizzes"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    quiz_name = Column(String(200), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    user = relationship("User", back_populates="quizzes")
+    questions = relationship("QuizQuestion", back_populates="quiz", cascade="all, delete-orphan")
+
+class QuizQuestion(Base):
+    """퀴즈 문제 모델"""
+    __tablename__ = "quiz_questions"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    quiz_id = Column(String, ForeignKey("quizzes.id"), nullable=False)
+    question_text = Column(Text, nullable=False)
+    question_type = Column(String(50), default="multiple_choice")  # multiple_choice, short_answer
+    question_order = Column(Integer, nullable=False)
+    correct_answer = Column(Text, nullable=True)  # 서술형 정답용
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    quiz = relationship("Quiz", back_populates="questions")
+    answers = relationship("QuizAnswer", back_populates="question", cascade="all, delete-orphan")
+    progress = relationship("UserProgress", back_populates="question", cascade="all, delete-orphan")
+
+class QuizAnswer(Base):
+    """퀴즈 선택지 모델 (4지선다용)"""
+    __tablename__ = "quiz_answers"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    question_id = Column(String, ForeignKey("quiz_questions.id"), nullable=False)
+    answer_text = Column(Text, nullable=False)
+    is_correct = Column(Boolean, default=False)
+    answer_order = Column(Integer, nullable=False)
+
+    # Relationships
+    question = relationship("QuizQuestion", back_populates="answers")
+
+class UserProgress(Base):
+    """사용자 학습 진척도 모델 (Spaced Repetition)"""
+    __tablename__ = "user_progress"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    question_id = Column(String, ForeignKey("quiz_questions.id"), nullable=False)
+    last_attempted = Column(DateTime, default=datetime.utcnow)
+    correct_count = Column(Integer, default=0)
+    total_attempts = Column(Integer, default=0)
+    next_review_date = Column(DateTime, nullable=True)
+
+    # Relationships
+    user = relationship("User", back_populates="progress")
+    question = relationship("QuizQuestion", back_populates="progress")
 

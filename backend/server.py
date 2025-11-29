@@ -19,9 +19,15 @@ from feynman_prompts import LearningPhase, feynman_engine
 from evaluation_system import evaluator
 from learning_flow import flow_manager
 from auth import get_password_hash, verify_password, create_access_token, decode_access_token
-from fastapi import File, UploadFile
+from fastapi import File, UploadFile, Form
 from rag_system import rag_system
 from fastapi.staticfiles import StaticFiles
+
+# Quiz 관련 import
+from quiz_generator import generate_quiz_from_text
+from pdf_utils import extract_text_from_pdf, truncate_text
+from datetime import timedelta
+from io import BytesIO
 
 # JWT 인증을 위한 보안 스키마
 security = HTTPBearer()
@@ -588,6 +594,69 @@ class SubjectResponse(BaseModel):
     grade: str
     year: int
     semester: int
+
+    class Config:
+        from_attributes = True
+
+# ========== Quiz 관련 Pydantic 모델 ==========
+class QuizAnswerCreate(BaseModel):
+    answer_text: str
+    is_correct: bool
+    answer_order: int
+
+class QuizQuestionCreate(BaseModel):
+    question_text: str
+    question_type: str  # "multiple_choice" or "short_answer"
+    question_order: int
+    correct_answer: Optional[str] = None  # 서술형 정답
+    answers: Optional[List[QuizAnswerCreate]] = None  # 4지선다 선택지
+
+class QuizCreate(BaseModel):
+    quiz_name: str
+    questions: List[QuizQuestionCreate]
+
+class QuizAnswerResponse(BaseModel):
+    id: str
+    answer_text: str
+    is_correct: bool
+    answer_order: int
+
+    class Config:
+        from_attributes = True
+
+class QuizQuestionResponse(BaseModel):
+    id: str
+    question_text: str
+    question_type: str
+    question_order: int
+    correct_answer: Optional[str] = None
+    answers: List[QuizAnswerResponse] = []
+
+    class Config:
+        from_attributes = True
+
+class QuizResponse(BaseModel):
+    id: str
+    user_id: str
+    quiz_name: str
+    created_at: datetime
+    updated_at: datetime
+    questions: List[QuizQuestionResponse] = []
+
+    class Config:
+        from_attributes = True
+
+class ProgressSubmit(BaseModel):
+    results: List[Dict]  # [{"question_id": "...", "is_correct": True/False}, ...]
+
+class ProgressResponse(BaseModel):
+    id: str
+    user_id: str
+    question_id: str
+    last_attempted: datetime
+    correct_count: int
+    total_attempts: int
+    next_review_date: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -1655,6 +1724,213 @@ def delete_subject(
 
     print(f"🗑️ 과목 삭제됨: {subject.name}")
     return {"status": "ok", "message": "Subject deleted"}
+
+# ========== Quiz 관련 API 엔드포인트 ==========
+
+@app.get("/api/users/{user_id}/quizzes", response_model=List[QuizResponse])
+async def get_user_quizzes(
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """사용자의 모든 퀴즈 조회"""
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="권한이 없습니다")
+
+    quizzes = db.query(models.Quiz).filter(
+        models.Quiz.user_id == user_id
+    ).order_by(models.Quiz.created_at.desc()).all()
+
+    print(f"📚 {current_user.username}의 퀴즈 {len(quizzes)}개 조회")
+    return quizzes
+
+@app.post("/api/quizzes", response_model=QuizResponse)
+async def create_quiz(
+    quiz_data: QuizCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """퀴즈 생성 (수동 또는 AI 생성 후 저장)"""
+    new_quiz = models.Quiz(
+        quiz_name=quiz_data.quiz_name,
+        user_id=current_user.id
+    )
+    db.add(new_quiz)
+    db.flush()
+
+    # 질문 추가
+    for q_data in quiz_data.questions:
+        new_question = models.QuizQuestion(
+            quiz_id=new_quiz.id,
+            question_text=q_data.question_text,
+            question_type=q_data.question_type,
+            question_order=q_data.question_order,
+            correct_answer=q_data.correct_answer
+        )
+        db.add(new_question)
+        db.flush()
+
+        # 4지선다 선택지 추가
+        if q_data.question_type == "multiple_choice" and q_data.answers:
+            for a_data in q_data.answers:
+                new_answer = models.QuizAnswer(
+                    question_id=new_question.id,
+                    answer_text=a_data.answer_text,
+                    is_correct=a_data.is_correct,
+                    answer_order=a_data.answer_order
+                )
+                db.add(new_answer)
+
+    db.commit()
+    db.refresh(new_quiz)
+
+    print(f"✅ 퀴즈 생성됨: {new_quiz.quiz_name} ({len(quiz_data.questions)}문제)")
+    return new_quiz
+
+@app.delete("/api/quizzes/{quiz_id}")
+async def delete_quiz(
+    quiz_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """퀴즈 삭제"""
+    quiz = db.query(models.Quiz).filter(models.Quiz.id == quiz_id).first()
+    if not quiz:
+        raise HTTPException(status_code=404, detail="퀴즈를 찾을 수 없습니다")
+    if quiz.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="권한이 없습니다")
+
+    quiz_name = quiz.quiz_name
+    db.delete(quiz)
+    db.commit()
+
+    print(f"🗑️ 퀴즈 삭제됨: {quiz_name}")
+    return {"message": "퀴즈가 삭제되었습니다"}
+
+@app.post("/api/quizzes/generate-from-pdf")
+async def generate_quiz_from_pdf(
+    file: UploadFile = File(...),
+    num_questions: int = Form(5),
+    question_types: str = Form("mixed"),
+    current_user: Optional[models.User] = Depends(get_current_user)
+):
+    """PDF에서 AI 퀴즈 생성 (저장하지 않고 반환만)"""
+    try:
+        if not file.filename.endswith('.pdf'):
+            raise HTTPException(status_code=400, detail="PDF 파일만 업로드 가능합니다")
+
+        # PDF 읽기
+        contents = await file.read()
+        pdf_file = BytesIO(contents)
+        pdf_file.name = file.filename
+
+        # 텍스트 추출
+        text = extract_text_from_pdf(pdf_file)
+        if not text:
+            raise HTTPException(status_code=400, detail="PDF에서 텍스트를 추출할 수 없습니다")
+
+        # 텍스트 길이 제한 (5000 토큰 = 20000자)
+        text = truncate_text(text, max_tokens=5000)
+
+        # AI 퀴즈 생성
+        questions = generate_quiz_from_text(
+            text=text,
+            num_questions=num_questions,
+            question_types=question_types
+        )
+
+        if not questions:
+            raise HTTPException(status_code=500, detail="AI 퀴즈 생성에 실패했습니다")
+
+        print(f"🤖 AI 퀴즈 생성 완료: {file.filename} → {len(questions)}문제")
+        return {
+            "success": True,
+            "filename": file.filename,
+            "questions": questions,
+            "message": f"{len(questions)}개의 문제가 생성되었습니다"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"퀴즈 생성 중 오류 발생: {str(e)}")
+
+# ========== Progress (Spaced Repetition) API ==========
+
+@app.post("/api/progress")
+async def submit_progress(
+    progress_data: ProgressSubmit,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """퀴즈 진행 상황 기록 (간격 반복 학습)"""
+    for result in progress_data.results:
+        question_id = result["question_id"]
+        is_correct = result["is_correct"]
+
+        # 기존 진행 상황 조회
+        progress = db.query(models.UserProgress).filter(
+            models.UserProgress.user_id == current_user.id,
+            models.UserProgress.question_id == question_id
+        ).first()
+
+        if not progress:
+            # 첫 시도 -> 1일 후 복습
+            progress = models.UserProgress(
+                user_id=current_user.id,
+                question_id=question_id,
+                total_attempts=1,
+                correct_count=1 if is_correct else 0,
+                next_review_date=datetime.utcnow() + timedelta(days=1),
+                last_attempted=datetime.utcnow()
+            )
+            db.add(progress)
+        else:
+            # 재시도 -> 간격 조정
+            progress.total_attempts += 1
+            progress.last_attempted = datetime.utcnow()
+
+            if is_correct:
+                progress.correct_count += 1
+                # 정답 -> 간격 2배 증가 (최대 30일)
+                current_interval = 1 if not progress.next_review_date else \
+                    (progress.next_review_date - progress.last_attempted).days
+                new_interval = min(current_interval * 2, 30)
+                progress.next_review_date = datetime.utcnow() + timedelta(days=new_interval)
+            else:
+                # 오답 -> 간격 1일로 리셋
+                progress.next_review_date = datetime.utcnow() + timedelta(days=1)
+
+    db.commit()
+    print(f"📊 {current_user.username} 진행 상황 저장: {len(progress_data.results)}문제")
+    return {"message": "진행 상황이 저장되었습니다"}
+
+@app.get("/api/users/{user_id}/progress", response_model=List[ProgressResponse])
+async def get_user_progress(
+    user_id: str,
+    review_due: bool = False,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """사용자 학습 진척도 조회"""
+    if current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="권한이 없습니다")
+
+    query = db.query(models.UserProgress).filter(
+        models.UserProgress.user_id == user_id
+    )
+
+    # 복습 기한 도래한 문제만 필터링
+    if review_due:
+        query = query.filter(
+            models.UserProgress.next_review_date <= datetime.utcnow()
+        )
+
+    progress_list = query.all()
+    print(f"📈 {current_user.username} 진척도 조회: {len(progress_list)}문제")
+    return progress_list
 
 if __name__ == "__main__":
     import uvicorn

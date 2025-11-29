@@ -1,7 +1,7 @@
 // lib/screens/main_navigation_screen.dart
 import 'package:flutter/material.dart';
 import 'planner_screens/planner_screen.dart';
-import './quiz_screen.dart';
+import 'quiz/quiz_home_screen.dart';
 import './chat_screen.dart';
 import './fileview_screen.dart';
 import './setting_screen.dart';
@@ -24,7 +24,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     super.initState();
     _screens = [
       const PlannerScreen(),
-      const QuizScreen(),
+      QuizHomeScreen(),
       ChatScreen(), // ChatScreen은 const 생성자가 없음
       FileViewScreen(key: _fileViewKey),
       const SettingScreen(),
