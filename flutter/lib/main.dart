@@ -288,6 +288,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   Future<void> _checkAuthStatus() async {
     final loggedIn = await AuthService.isLoggedIn();
+
+    // 로그인된 경우 UserProvider 초기화
+    if (loggedIn && mounted) {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.initialize();
+    }
+
     setState(() {
       _isLoggedIn = loggedIn;
       _isLoading = false;

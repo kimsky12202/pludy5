@@ -455,8 +455,6 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
         elevation: 2,
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
         leading: IconButton(
           icon: Icon(_showChatList ? Icons.chat : Icons.menu),
           onPressed: () {

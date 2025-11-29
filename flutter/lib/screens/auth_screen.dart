@@ -1,6 +1,8 @@
 // lib/screens/auth.screens.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/auth.dart';
+import '../providers/user_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -42,8 +44,11 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     if (result['success'] == true) {
-      // 로그인 성공 - 메인 화면으로 이동
+      // 로그인 성공 - UserProvider 초기화 후 메인 화면으로 이동
       if (mounted) {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        await userProvider.initialize();
+
         Navigator.of(context).pushReplacementNamed('/home');
       }
     } else {
