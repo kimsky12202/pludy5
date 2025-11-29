@@ -62,10 +62,14 @@ class ScheduleService {
     try {
       final headers = await AuthService.getAuthHeaders();
 
-      final isUpdate = schedule.id.isNotEmpty;
+      // UUID 형식 확인 (8-4-4-4-12 형식)
+      final uuidPattern = RegExp(
+          r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+          caseSensitive: false);
+      final isServerGeneratedId = uuidPattern.hasMatch(schedule.id);
 
-      if (isUpdate) {
-        // 업데이트
+      if (isServerGeneratedId) {
+        // 서버에서 생성한 UUID → 업데이트
         final response = await http
             .put(
               Uri.parse('$baseUrl/api/planner/schedules/${schedule.id}'),
@@ -78,12 +82,15 @@ class ScheduleService {
           throw Exception('일정 업데이트 실패: ${response.statusCode}');
         }
       } else {
-        // 생성
+        // 로컬에서 생성한 타임스탬프 ID 또는 빈 ID → 새로 생성
+        final scheduleData = schedule.toJson();
+        scheduleData.remove('id'); // 로컬 ID 제거 (서버가 UUID 생성)
+
         final response = await http
             .post(
               Uri.parse('$baseUrl/api/planner/schedules'),
               headers: headers,
-              body: json.encode(schedule.toJson()),
+              body: json.encode(scheduleData),
             )
             .timeout(Duration(seconds: 10));
 

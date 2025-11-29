@@ -35,11 +35,14 @@ class GoalService {
     try {
       final headers = await AuthService.getAuthHeaders();
 
-      // ID가 있으면 업데이트, 없으면 생성으로 간주
-      final isUpdate = goal.id.isNotEmpty;
+      // UUID 형식 확인 (8-4-4-4-12 형식)
+      final uuidPattern = RegExp(
+          r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+          caseSensitive: false);
+      final isServerGeneratedId = uuidPattern.hasMatch(goal.id);
 
-      if (isUpdate) {
-        // 업데이트
+      if (isServerGeneratedId) {
+        // 서버에서 생성한 UUID → 업데이트
         final response = await http
             .put(
               Uri.parse('$baseUrl/api/planner/goals/${goal.id}'),
@@ -52,12 +55,16 @@ class GoalService {
           throw Exception('목표 업데이트 실패: ${response.statusCode}');
         }
       } else {
-        // 생성
+        // 로컬에서 생성한 타임스탬프 ID 또는 빈 ID → 새로 생성
+        final goalData = goal.toJson();
+        goalData.remove('id'); // 로컬 ID 제거 (서버가 UUID 생성)
+        goalData.remove('createdAt'); // 서버가 생성
+
         final response = await http
             .post(
               Uri.parse('$baseUrl/api/planner/goals'),
               headers: headers,
-              body: json.encode(goal.toJson()),
+              body: json.encode(goalData),
             )
             .timeout(Duration(seconds: 10));
 
