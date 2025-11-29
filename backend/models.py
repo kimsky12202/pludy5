@@ -1,5 +1,5 @@
 # backend/models.py
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer, Boolean, Float
+from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer, Boolean, Float, BigInteger
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
@@ -111,7 +111,7 @@ class Schedule(Base):
     start_time = Column(String(5), nullable=True)  # HH:MM 형식
     end_time = Column(String(5), nullable=True)    # HH:MM 형식
     is_completed = Column(Boolean, default=False)
-    color = Column(Integer, nullable=True)  # Flutter Color.value (ARGB int)
+    color = Column(BigInteger, nullable=True)  # Flutter Color.value (ARGB unsigned 32-bit)
 
     user = relationship("User")
 
