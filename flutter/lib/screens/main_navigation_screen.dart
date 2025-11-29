@@ -34,6 +34,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
@@ -51,7 +52,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: theme.colorScheme.primary,
         unselectedItemColor: theme.colorScheme.onSurface.withOpacity(0.6),
-        backgroundColor: theme.scaffoldBackgroundColor,
+        backgroundColor: isDark ? Colors.grey.shade900 : Colors.white,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),

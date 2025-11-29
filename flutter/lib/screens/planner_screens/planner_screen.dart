@@ -115,69 +115,80 @@ class _CalendarViewState extends State<CalendarView> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // 캘린더 위젯
-        TableCalendar<Schedule>(
-          firstDay: DateTime.utc(2020, 1, 1),
-          lastDay: DateTime.utc(2030, 12, 31),
-          focusedDay: _focusedDay,
-          selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-          eventLoader: (day) {
-            final date = DateTime(day.year, day.month, day.day);
-            return _allSchedulesMap[date] ?? [];
-          },
-          onDaySelected: (selectedDay, focusedDay) {
-            setState(() {
-              _selectedDay = selectedDay;
-              _focusedDay = focusedDay;
-            });
-            // 선택한 날짜의 일정 로드
-            _loadSchedules();
-          },
-          calendarFormat: CalendarFormat.month,
-          startingDayOfWeek: StartingDayOfWeek.monday,
-          headerStyle: const HeaderStyle(
-            formatButtonVisible: false,
-            titleCentered: true,
-          ),
-          calendarStyle: CalendarStyle(
-            markerDecoration: const BoxDecoration(
-              color: Colors.blue,
-              shape: BoxShape.circle,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 화면 높이에 맞게 캘린더 크기 조절
+        final availableHeight = constraints.maxHeight;
+        final calendarHeight = availableHeight * 0.5; // 화면의 50%를 캘린더에 할당
+        final rowHeight = (calendarHeight - 100) / 6; // 6주 표시 (헤더 제외)
+
+        return Column(
+          children: [
+            // 캘린더 위젯
+            TableCalendar<Schedule>(
+              firstDay: DateTime.utc(2020, 1, 1),
+              lastDay: DateTime.utc(2030, 12, 31),
+              focusedDay: _focusedDay,
+              selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+              eventLoader: (day) {
+                final date = DateTime(day.year, day.month, day.day);
+                return _allSchedulesMap[date] ?? [];
+              },
+              onDaySelected: (selectedDay, focusedDay) {
+                setState(() {
+                  _selectedDay = selectedDay;
+                  _focusedDay = focusedDay;
+                });
+                // 선택한 날짜의 일정 로드
+                _loadSchedules();
+              },
+              calendarFormat: CalendarFormat.month,
+              startingDayOfWeek: StartingDayOfWeek.monday,
+              daysOfWeekHeight: 40, // 요일 헤더 높이
+              rowHeight: rowHeight.clamp(40.0, 60.0), // 날짜 셀 높이 (최소 40, 최대 60)
+              headerStyle: const HeaderStyle(
+                formatButtonVisible: false,
+                titleCentered: true,
+              ),
+              calendarStyle: CalendarStyle(
+                markerDecoration: const BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                ),
+                todayDecoration: BoxDecoration(
+                  color: Colors.blue.shade100,
+                  shape: BoxShape.circle,
+                ),
+                selectedDecoration: const BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              calendarBuilders: CalendarBuilders(
+                markerBuilder: (context, date, events) {
+                  if (events.isNotEmpty) {
+                    return Positioned(
+                      bottom: 1,
+                      child: Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    );
+                  }
+                  return null;
+                },
+              ),
             ),
-            todayDecoration: BoxDecoration(
-              color: Colors.blue.shade100,
-              shape: BoxShape.circle,
-            ),
-            selectedDecoration: const BoxDecoration(
-              color: Colors.blue,
-              shape: BoxShape.circle,
-            ),
-          ),
-          calendarBuilders: CalendarBuilders(
-            markerBuilder: (context, date, events) {
-              if (events.isNotEmpty) {
-                return Positioned(
-                  bottom: 1,
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Colors.blue,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                );
-              }
-              return null;
-            },
-          ),
-        ),
-        const Divider(),
-        // 선택한 날짜의 일정 목록
-        Expanded(child: _buildScheduleList()),
-      ],
+            const Divider(),
+            // 선택한 날짜의 일정 목록
+            Expanded(child: _buildScheduleList()),
+          ],
+        );
+      },
     );
   }
 
@@ -462,43 +473,50 @@ class _TimetableViewState extends State<TimetableView> {
       (index) => _weekStart.add(Duration(days: index)),
     );
 
-    return Column(
-      children: [
-        // 요일 헤더
-        _buildDayHeaders(weekDays),
-        const Divider(),
-        // 시간표 본문 - 시간 표시와 요일별 박스
-        Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 시간 표시 컬럼
-              _buildTimeColumn(),
-              // 요일별 박스들
-              Expanded(
-                child: Row(
-                  children:
-                      weekDays.map((date) {
-                        return Expanded(child: _buildDayBox(date));
-                      }).toList(),
-                ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 화면 너비에 맞게 시간 컬럼 너비 조절 (최소 50, 최대 70)
+        final timeColumnWidth = (constraints.maxWidth * 0.12).clamp(50.0, 70.0);
+
+        return Column(
+          children: [
+            // 요일 헤더
+            _buildDayHeaders(weekDays, timeColumnWidth),
+            const Divider(),
+            // 시간표 본문 - 시간 표시와 요일별 박스
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 시간 표시 컬럼
+                  _buildTimeColumn(timeColumnWidth),
+                  // 요일별 박스들
+                  Expanded(
+                    child: Row(
+                      children:
+                          weekDays.map((date) {
+                            return Expanded(child: _buildDayBox(date));
+                          }).toList(),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 
   // 요일 헤더
-  Widget _buildDayHeaders(List<DateTime> weekDays) {
+  Widget _buildDayHeaders(List<DateTime> weekDays, double timeColumnWidth) {
     final dayNames = ['월', '화', '수', '목', '금', '토', '일'];
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          const SizedBox(width: 60), // 시간 컬럼 공간
+          SizedBox(width: timeColumnWidth), // 시간 컬럼 공간
           ...weekDays.asMap().entries.map((entry) {
             final index = entry.key;
             final date = entry.value;
@@ -531,9 +549,9 @@ class _TimetableViewState extends State<TimetableView> {
   }
 
   // 시간 표시 컬럼 (00:00 ~ 23:00)
-  Widget _buildTimeColumn() {
+  Widget _buildTimeColumn(double width) {
     return Container(
-      width: 60,
+      width: width,
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         children: List.generate(24, (index) {
