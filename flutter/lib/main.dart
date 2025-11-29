@@ -17,16 +17,26 @@ import 'screens/ai_screen/second_explanation_screen.dart';
 import 'screens/ai_screen/second_reflection_screen.dart';
 import 'screens/ai_screen/evaluation_screen.dart';
 
-void main() {
-  runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // ThemeProvider 초기화 및 테마 로드
+  final themeProvider = ThemeProvider();
+  await themeProvider.loadTheme();
+
+  runApp(MyApp(themeProvider: themeProvider));
 }
 
 class MyApp extends StatelessWidget {
+  final ThemeProvider themeProvider;
+
+  const MyApp({super.key, required this.themeProvider});
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider.value(value: themeProvider),
         ChangeNotifierProvider(create: (context) => UserProvider()),
       ],
       child: Consumer<ThemeProvider>(

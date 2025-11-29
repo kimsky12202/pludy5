@@ -23,34 +23,8 @@ class SettingsScreen extends StatelessWidget {
     return Container(
       color: backgroundColor, // 여기가 핵심입니다! (배경을 어둡게 변경)
       child: ListView(
-        padding: EdgeInsets.zero,
+        padding: EdgeInsets.all(16),
         children: [
-          // 상단 프로필 영역
-          UserAccountsDrawerHeader(
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey.shade900 : Colors.black,
-            ),
-            accountName: Text(
-              userProvider.username ?? '사용자',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.white,
-              ),
-            ),
-            accountEmail: Text(
-              userProvider.email ?? '',
-              style: TextStyle(color: Colors.white70),
-            ),
-            currentAccountPicture: CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Text(
-                (userProvider.username ?? 'U')[0].toUpperCase(),
-                style: TextStyle(fontSize: 24, color: Colors.black),
-              ),
-            ),
-          ),
-
           // 다크모드 스위치
           SwitchListTile(
             title: Text(
