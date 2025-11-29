@@ -34,12 +34,17 @@ class _PlannerScreenState extends State<PlannerScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('학습 플래너'),
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
+          labelColor: theme.colorScheme.onPrimary, // 선택된 탭 색상
+          unselectedLabelColor: theme.colorScheme.onPrimary.withOpacity(0.6), // 선택 안 된 탭 색상
+          indicatorColor: theme.colorScheme.onPrimary, // 하단 인디케이터 색상
           tabs: const [
             Tab(icon: Icon(Icons.calendar_today), text: '캘린더'),
             Tab(icon: Icon(Icons.schedule), text: '시간표'),
