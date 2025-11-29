@@ -5,7 +5,7 @@ from fastapi import Header
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict
 from database import engine, get_db, SessionLocal
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 import httpx
 import json
@@ -520,15 +520,16 @@ class GoalUpdate(BaseModel):
 
 class GoalResponse(BaseModel):
     id: str
-    user_id: str
+    user_id: str = Field(..., serialization_alias='userId')
     title: str
     description: Optional[str]
     deadline: datetime
-    is_completed: bool
-    created_at: datetime
+    is_completed: bool = Field(..., serialization_alias='isCompleted')
+    created_at: datetime = Field(..., serialization_alias='createdAt')
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 class ScheduleCreate(BaseModel):
     date: datetime
@@ -549,17 +550,18 @@ class ScheduleUpdate(BaseModel):
 
 class ScheduleResponse(BaseModel):
     id: str
-    user_id: str
+    user_id: str = Field(..., serialization_alias='userId')
     date: datetime
     title: str
     description: Optional[str]
-    start_time: Optional[str]
-    end_time: Optional[str]
-    is_completed: bool
+    start_time: Optional[str] = Field(None, serialization_alias='startTime')
+    end_time: Optional[str] = Field(None, serialization_alias='endTime')
+    is_completed: bool = Field(..., serialization_alias='isCompleted')
     color: Optional[int]
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 class SubjectCreate(BaseModel):
     name: str
