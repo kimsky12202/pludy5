@@ -5,7 +5,7 @@ from fastapi import Header
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict
 from database import engine, get_db, SessionLocal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 import httpx
 import json
@@ -549,6 +549,8 @@ class ScheduleUpdate(BaseModel):
     color: Optional[int] = None
 
 class ScheduleResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
     id: str
     user_id: str = Field(..., serialization_alias='userId')
     date: datetime
@@ -558,10 +560,6 @@ class ScheduleResponse(BaseModel):
     end_time: Optional[str] = Field(None, serialization_alias='endTime')
     is_completed: bool = Field(..., serialization_alias='isCompleted')
     color: Optional[int]
-
-    class Config:
-        from_attributes = True
-        populate_by_name = True
 
 class SubjectCreate(BaseModel):
     name: str
@@ -1443,7 +1441,7 @@ def toggle_goal_completion(
     return {"status": "ok", "is_completed": goal.is_completed}
 
 # ========== Planner API - Schedules ==========
-@app.get("/api/planner/schedules", response_model=List[ScheduleResponse])
+@app.get("/api/planner/schedules", response_model=List[ScheduleResponse], response_model_by_alias=True)
 def get_schedules(
     date: Optional[str] = None,  # YYYY-MM-DD 형식
     db: Session = Depends(get_db),
@@ -1472,7 +1470,7 @@ def get_schedules(
     schedules = query.order_by(models.Schedule.date).all()
     return schedules
 
-@app.post("/api/planner/schedules", response_model=ScheduleResponse)
+@app.post("/api/planner/schedules", response_model=ScheduleResponse, response_model_by_alias=True)
 def create_schedule(
     schedule_data: ScheduleCreate,
     db: Session = Depends(get_db),
@@ -1492,7 +1490,7 @@ def create_schedule(
     print(f"📅 일정 생성됨: {schedule.title} (User: {current_user.username})")
     return schedule
 
-@app.put("/api/planner/schedules/{schedule_id}", response_model=ScheduleResponse)
+@app.put("/api/planner/schedules/{schedule_id}", response_model=ScheduleResponse, response_model_by_alias=True)
 def update_schedule(
     schedule_id: str,
     schedule_update: ScheduleUpdate,
