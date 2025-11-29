@@ -1,5 +1,5 @@
 # backend/models.py
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer, Boolean
+from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer, Boolean, Float
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
@@ -83,4 +83,49 @@ class PDFFile(Base):
     
     user = relationship("User", back_populates="pdf_files")
     folder = relationship("Folder", back_populates="pdf_files")
+
+# ========== Planner 모델 ==========
+class Goal(Base):
+    """학습 목표 모델"""
+    __tablename__ = "goals"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=True)
+    deadline = Column(DateTime, nullable=False)
+    is_completed = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+
+class Schedule(Base):
+    """일정 모델"""
+    __tablename__ = "schedules"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    date = Column(DateTime, nullable=False)
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=True)
+    start_time = Column(String(5), nullable=True)  # HH:MM 형식
+    end_time = Column(String(5), nullable=True)    # HH:MM 형식
+    is_completed = Column(Boolean, default=False)
+    color = Column(Integer, nullable=True)  # Flutter Color.value (ARGB int)
+
+    user = relationship("User")
+
+class Subject(Base):
+    """과목 모델 (학점계산기용)"""
+    __tablename__ = "subjects"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    name = Column(String(100), nullable=False)
+    credits = Column(Float, nullable=False)
+    grade = Column(String(2), nullable=False)  # A+, A, B+, B, C+, C, D+, D, F
+    year = Column(Integer, nullable=False)     # 학년 (1, 2, 3, 4)
+    semester = Column(Integer, nullable=False) # 학기 (1, 2)
+
+    user = relationship("User")
 

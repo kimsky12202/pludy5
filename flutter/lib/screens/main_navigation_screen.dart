@@ -1,6 +1,6 @@
 // lib/screens/main_navigation_screen.dart
 import 'package:flutter/material.dart';
-import './planner_screen.dart';
+import './planner_screens/planner_screen.dart';
 import './quiz_screen.dart';
 import './chat_screen.dart';
 import './fileview_screen.dart';

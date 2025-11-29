@@ -506,6 +506,87 @@ def delete_room(
 class DeleteRoomsRequest(BaseModel):
     room_ids: List[str]
 
+# ========== Planner Pydantic 모델 ==========
+class GoalCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    deadline: datetime
+
+class GoalUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    deadline: Optional[datetime] = None
+    is_completed: Optional[bool] = None
+
+class GoalResponse(BaseModel):
+    id: str
+    user_id: str
+    title: str
+    description: Optional[str]
+    deadline: datetime
+    is_completed: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ScheduleCreate(BaseModel):
+    date: datetime
+    title: str
+    description: Optional[str] = None
+    start_time: Optional[str] = None  # HH:MM
+    end_time: Optional[str] = None    # HH:MM
+    color: Optional[int] = None
+
+class ScheduleUpdate(BaseModel):
+    date: Optional[datetime] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    is_completed: Optional[bool] = None
+    color: Optional[int] = None
+
+class ScheduleResponse(BaseModel):
+    id: str
+    user_id: str
+    date: datetime
+    title: str
+    description: Optional[str]
+    start_time: Optional[str]
+    end_time: Optional[str]
+    is_completed: bool
+    color: Optional[int]
+
+    class Config:
+        from_attributes = True
+
+class SubjectCreate(BaseModel):
+    name: str
+    credits: float
+    grade: str  # A+, A, B+, etc.
+    year: int
+    semester: int
+
+class SubjectUpdate(BaseModel):
+    name: Optional[str] = None
+    credits: Optional[float] = None
+    grade: Optional[str] = None
+    year: Optional[int] = None
+    semester: Optional[int] = None
+
+class SubjectResponse(BaseModel):
+    id: str
+    user_id: str
+    name: str
+    credits: float
+    grade: str
+    year: int
+    semester: int
+
+    class Config:
+        from_attributes = True
+
 @app.post("/api/rooms/delete-multiple")
 def delete_multiple_rooms(
     request: DeleteRoomsRequest, 
@@ -1256,6 +1337,319 @@ async def websocket_endpoint_with_feynman(
         print(f"❌ WebSocket 오류: {e}")
     finally:
         db.close()
+
+# ========== Planner API - Goals ==========
+@app.get("/api/planner/goals", response_model=List[GoalResponse])
+def get_goals(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """사용자의 모든 목표 가져오기"""
+    goals = db.query(models.Goal).filter(
+        models.Goal.user_id == current_user.id
+    ).order_by(models.Goal.deadline).all()
+
+    return goals
+
+@app.post("/api/planner/goals", response_model=GoalResponse)
+def create_goal(
+    goal_data: GoalCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """새 목표 생성"""
+    import uuid
+    goal = models.Goal(
+        id=str(uuid.uuid4()),
+        user_id=current_user.id,
+        **goal_data.dict()
+    )
+    db.add(goal)
+    db.commit()
+    db.refresh(goal)
+
+    print(f"🎯 목표 생성됨: {goal.title} (User: {current_user.username})")
+    return goal
+
+@app.put("/api/planner/goals/{goal_id}", response_model=GoalResponse)
+def update_goal(
+    goal_id: str,
+    goal_update: GoalUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """목표 수정"""
+    goal = db.query(models.Goal).filter(
+        models.Goal.id == goal_id,
+        models.Goal.user_id == current_user.id
+    ).first()
+
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+
+    # 제공된 필드만 업데이트
+    update_data = goal_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(goal, key, value)
+
+    db.commit()
+    db.refresh(goal)
+
+    print(f"✏️ 목표 수정됨: {goal.title}")
+    return goal
+
+@app.delete("/api/planner/goals/{goal_id}")
+def delete_goal(
+    goal_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """목표 삭제"""
+    goal = db.query(models.Goal).filter(
+        models.Goal.id == goal_id,
+        models.Goal.user_id == current_user.id
+    ).first()
+
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+
+    db.delete(goal)
+    db.commit()
+
+    print(f"🗑️ 목표 삭제됨: {goal.title}")
+    return {"status": "ok", "message": "Goal deleted"}
+
+@app.patch("/api/planner/goals/{goal_id}/toggle")
+def toggle_goal_completion(
+    goal_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """목표 완료 상태 토글"""
+    goal = db.query(models.Goal).filter(
+        models.Goal.id == goal_id,
+        models.Goal.user_id == current_user.id
+    ).first()
+
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+
+    goal.is_completed = not goal.is_completed
+    db.commit()
+
+    print(f"✅ 목표 상태 변경: {goal.title} -> {goal.is_completed}")
+    return {"status": "ok", "is_completed": goal.is_completed}
+
+# ========== Planner API - Schedules ==========
+@app.get("/api/planner/schedules", response_model=List[ScheduleResponse])
+def get_schedules(
+    date: Optional[str] = None,  # YYYY-MM-DD 형식
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """사용자의 일정 가져오기 (날짜 필터 옵션)"""
+    query = db.query(models.Schedule).filter(
+        models.Schedule.user_id == current_user.id
+    )
+
+    # 날짜 필터가 있으면 적용
+    if date:
+        try:
+            filter_date = datetime.fromisoformat(date)
+            # 해당 날짜의 시작과 끝
+            start_of_day = filter_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_of_day = filter_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+            query = query.filter(
+                models.Schedule.date >= start_of_day,
+                models.Schedule.date <= end_of_day
+            )
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+
+    schedules = query.order_by(models.Schedule.date).all()
+    return schedules
+
+@app.post("/api/planner/schedules", response_model=ScheduleResponse)
+def create_schedule(
+    schedule_data: ScheduleCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """새 일정 생성"""
+    import uuid
+    schedule = models.Schedule(
+        id=str(uuid.uuid4()),
+        user_id=current_user.id,
+        **schedule_data.dict()
+    )
+    db.add(schedule)
+    db.commit()
+    db.refresh(schedule)
+
+    print(f"📅 일정 생성됨: {schedule.title} (User: {current_user.username})")
+    return schedule
+
+@app.put("/api/planner/schedules/{schedule_id}", response_model=ScheduleResponse)
+def update_schedule(
+    schedule_id: str,
+    schedule_update: ScheduleUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """일정 수정"""
+    schedule = db.query(models.Schedule).filter(
+        models.Schedule.id == schedule_id,
+        models.Schedule.user_id == current_user.id
+    ).first()
+
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+
+    update_data = schedule_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(schedule, key, value)
+
+    db.commit()
+    db.refresh(schedule)
+
+    print(f"✏️ 일정 수정됨: {schedule.title}")
+    return schedule
+
+@app.delete("/api/planner/schedules/{schedule_id}")
+def delete_schedule(
+    schedule_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """일정 삭제"""
+    schedule = db.query(models.Schedule).filter(
+        models.Schedule.id == schedule_id,
+        models.Schedule.user_id == current_user.id
+    ).first()
+
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+
+    db.delete(schedule)
+    db.commit()
+
+    print(f"🗑️ 일정 삭제됨: {schedule.title}")
+    return {"status": "ok", "message": "Schedule deleted"}
+
+@app.patch("/api/planner/schedules/{schedule_id}/toggle")
+def toggle_schedule_completion(
+    schedule_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """일정 완료 상태 토글"""
+    schedule = db.query(models.Schedule).filter(
+        models.Schedule.id == schedule_id,
+        models.Schedule.user_id == current_user.id
+    ).first()
+
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+
+    schedule.is_completed = not schedule.is_completed
+    db.commit()
+
+    print(f"✅ 일정 상태 변경: {schedule.title} -> {schedule.is_completed}")
+    return {"status": "ok", "is_completed": schedule.is_completed}
+
+# ========== Planner API - Subjects ==========
+@app.get("/api/planner/subjects", response_model=List[SubjectResponse])
+def get_subjects(
+    year: Optional[int] = None,
+    semester: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """사용자의 과목 가져오기 (학년/학기 필터 옵션)"""
+    query = db.query(models.Subject).filter(
+        models.Subject.user_id == current_user.id
+    )
+
+    if year:
+        query = query.filter(models.Subject.year == year)
+    if semester:
+        query = query.filter(models.Subject.semester == semester)
+
+    subjects = query.order_by(
+        models.Subject.year,
+        models.Subject.semester,
+        models.Subject.name
+    ).all()
+
+    return subjects
+
+@app.post("/api/planner/subjects", response_model=SubjectResponse)
+def create_subject(
+    subject_data: SubjectCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """새 과목 생성"""
+    import uuid
+    subject = models.Subject(
+        id=str(uuid.uuid4()),
+        user_id=current_user.id,
+        **subject_data.dict()
+    )
+    db.add(subject)
+    db.commit()
+    db.refresh(subject)
+
+    print(f"📚 과목 생성됨: {subject.name} (User: {current_user.username})")
+    return subject
+
+@app.put("/api/planner/subjects/{subject_id}", response_model=SubjectResponse)
+def update_subject(
+    subject_id: str,
+    subject_update: SubjectUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """과목 수정"""
+    subject = db.query(models.Subject).filter(
+        models.Subject.id == subject_id,
+        models.Subject.user_id == current_user.id
+    ).first()
+
+    if not subject:
+        raise HTTPException(status_code=404, detail="Subject not found")
+
+    update_data = subject_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(subject, key, value)
+
+    db.commit()
+    db.refresh(subject)
+
+    print(f"✏️ 과목 수정됨: {subject.name}")
+    return subject
+
+@app.delete("/api/planner/subjects/{subject_id}")
+def delete_subject(
+    subject_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """과목 삭제"""
+    subject = db.query(models.Subject).filter(
+        models.Subject.id == subject_id,
+        models.Subject.user_id == current_user.id
+    ).first()
+
+    if not subject:
+        raise HTTPException(status_code=404, detail="Subject not found")
+
+    db.delete(subject)
+    db.commit()
+
+    print(f"🗑️ 과목 삭제됨: {subject.name}")
+    return {"status": "ok", "message": "Subject deleted"}
 
 if __name__ == "__main__":
     import uvicorn

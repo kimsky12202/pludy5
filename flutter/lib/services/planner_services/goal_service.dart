@@ -1,71 +1,114 @@
 // lib/services/planner_services/goal_service.dart
-// 목표 저장 및 관리 서비스
+// 목표 저장 및 관리 서비스 (API 연동)
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import '../../config/app_config.dart';
 import '../../models/planner_models/planner_models.dart';
+import '../auth.dart';
 
 class GoalService {
-  static const String _goalKey = 'goals';
+  static final String baseUrl = AppConfig.baseUrl;
 
   /// 모든 목표 가져오기
   static Future<List<Goal>> getAllGoals() async {
-    final prefs = await SharedPreferences.getInstance();
-    final goalsJson = prefs.getString(_goalKey);
-
-    if (goalsJson == null) {
-      return [];
-    }
-
     try {
-      final List<dynamic> jsonList = json.decode(goalsJson);
-      return jsonList.map((json) => Goal.fromJson(json)).toList()
-        ..sort((a, b) => a.deadline.compareTo(b.deadline));
+      final headers = await AuthService.getAuthHeaders();
+      final response = await http
+          .get(Uri.parse('$baseUrl/api/planner/goals'), headers: headers)
+          .timeout(Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+        return jsonList.map((json) => Goal.fromJson(json)).toList();
+      } else {
+        print('목표 로드 실패: ${response.statusCode}');
+        return [];
+      }
     } catch (e) {
       print('목표 로드 오류: $e');
       return [];
     }
   }
 
-  /// 목표 저장
+  /// 목표 저장 (생성 또는 업데이트)
   static Future<void> saveGoal(Goal goal) async {
-    final allGoals = await getAllGoals();
+    try {
+      final headers = await AuthService.getAuthHeaders();
 
-    // 기존 목표가 있으면 업데이트, 없으면 추가
-    final index = allGoals.indexWhere((g) => g.id == goal.id);
-    if (index >= 0) {
-      allGoals[index] = goal;
-    } else {
-      allGoals.add(goal);
+      // ID가 있으면 업데이트, 없으면 생성으로 간주
+      final isUpdate = goal.id.isNotEmpty;
+
+      if (isUpdate) {
+        // 업데이트
+        final response = await http
+            .put(
+              Uri.parse('$baseUrl/api/planner/goals/${goal.id}'),
+              headers: headers,
+              body: json.encode(goal.toJson()),
+            )
+            .timeout(Duration(seconds: 10));
+
+        if (response.statusCode != 200) {
+          throw Exception('목표 업데이트 실패: ${response.statusCode}');
+        }
+      } else {
+        // 생성
+        final response = await http
+            .post(
+              Uri.parse('$baseUrl/api/planner/goals'),
+              headers: headers,
+              body: json.encode(goal.toJson()),
+            )
+            .timeout(Duration(seconds: 10));
+
+        if (response.statusCode != 200) {
+          throw Exception('목표 생성 실패: ${response.statusCode}');
+        }
+      }
+    } catch (e) {
+      print('목표 저장 오류: $e');
+      rethrow;
     }
-
-    await _saveAllGoals(allGoals);
   }
 
   /// 목표 삭제
   static Future<void> deleteGoal(String goalId) async {
-    final allGoals = await getAllGoals();
-    allGoals.removeWhere((g) => g.id == goalId);
-    await _saveAllGoals(allGoals);
+    try {
+      final headers = await AuthService.getAuthHeaders();
+      final response = await http
+          .delete(
+            Uri.parse('$baseUrl/api/planner/goals/$goalId'),
+            headers: headers,
+          )
+          .timeout(Duration(seconds: 10));
+
+      if (response.statusCode != 200) {
+        throw Exception('목표 삭제 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('목표 삭제 오류: $e');
+      rethrow;
+    }
   }
 
   /// 목표 완료 상태 토글
   static Future<void> toggleGoalCompletion(String goalId) async {
-    final allGoals = await getAllGoals();
-    final index = allGoals.indexWhere((g) => g.id == goalId);
+    try {
+      final headers = await AuthService.getAuthHeaders();
+      final response = await http
+          .patch(
+            Uri.parse('$baseUrl/api/planner/goals/$goalId/toggle'),
+            headers: headers,
+          )
+          .timeout(Duration(seconds: 10));
 
-    if (index >= 0) {
-      allGoals[index] = allGoals[index].copyWith(
-        isCompleted: !allGoals[index].isCompleted,
-      );
-      await _saveAllGoals(allGoals);
+      if (response.statusCode != 200) {
+        throw Exception('목표 상태 변경 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('목표 상태 변경 오류: $e');
+      rethrow;
     }
-  }
-
-  /// 모든 목표 저장
-  static Future<void> _saveAllGoals(List<Goal> goals) async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonList = goals.map((g) => g.toJson()).toList();
-    await prefs.setString(_goalKey, json.encode(jsonList));
   }
 }
 
