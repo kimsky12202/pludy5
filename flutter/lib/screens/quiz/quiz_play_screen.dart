@@ -1,8 +1,8 @@
 // lib/screens/quiz_play_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/user_provider.dart';
-import '../models/quiz_models.dart';
+import '../../providers/user_provider.dart';
+import '../../models/quiz_models.dart';
 import 'quiz_result_screen.dart';
 
 class QuizPlayScreen extends StatefulWidget {

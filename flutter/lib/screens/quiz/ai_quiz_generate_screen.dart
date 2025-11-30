@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import '../services/ai_quiz_service.dart';
+import '../../services/ai_quiz_service.dart';
 import 'ai_quiz_preview_screen.dart';
 
 class AIQuizGenerateScreen extends StatefulWidget {

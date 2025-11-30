@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/user_provider.dart';
-import '../services/quiz_service.dart';
-import '../models/quiz_models.dart';
+import '../../providers/user_provider.dart';
+import '../../services/quiz_service.dart';
+import '../../models/quiz_models.dart';
 import 'quiz_play_screen.dart';
 import 'ai_quiz_generate_screen.dart';
 import 'quiz_edit_screen.dart';

@@ -1,9 +1,9 @@
 // lib/screens/ai_quiz_preview_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/user_provider.dart';
-import '../services/ai_quiz_service.dart';
-import '../models/quiz_models.dart';
+import '../../providers/user_provider.dart';
+import '../../services/ai_quiz_service.dart';
+import '../../models/quiz_models.dart';
 
 class AIQuizPreviewScreen extends StatefulWidget {
   final List<dynamic> questions;

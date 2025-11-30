@@ -1,8 +1,8 @@
 // lib/screens/quiz_create_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/user_provider.dart';
-import '../models/quiz_models.dart';
+import '../../providers/user_provider.dart';
+import '../../models/quiz_models.dart';
 import 'ai_quiz_generate_screen.dart'; // 추가!
 
 class QuizCreateScreen extends StatefulWidget {
