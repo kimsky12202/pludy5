@@ -1216,6 +1216,7 @@ async def websocket_endpoint_with_feynman(
 
             # RAG 컨텍스트 검색 (채팅방에 연결된 PDF에서만)
             rag_context = ""
+            pdf_has_content = False  # PDF에 관련 내용이 있는지 추적
             if room.pdf_id:
                 # 채팅방에 PDF가 연결되어 있으면
                 if rag_system.has_pdf(room.user_id, room.pdf_id):
@@ -1235,10 +1236,14 @@ async def websocket_endpoint_with_feynman(
                         n_results=5
                     )
                     if contexts:
-                        rag_context = "\n\n**참고 자료:**\n"
+                        pdf_has_content = True
+                        rag_context = "\n\n**PDF 자료 (반드시 이 내용을 기반으로 답변해야 합니다):**\n"
                         for ctx in contexts:
-                            rag_context += f"[{ctx['filename']} - Page {ctx['page']}] {ctx['content'][:200]}...\n\n"
+                            # 전체 내용 포함 (잘리지 않도록)
+                            rag_context += f"[{ctx['filename']} - Page {ctx['page']}]\n{ctx['content']}\n\n---\n\n"
                         print(f"📚 RAG 컨텍스트 추가됨 ({len(contexts)}개, PDF: {room.pdf_id})")
+                    else:
+                        print(f"⚠️ PDF에 관련 내용을 찾지 못함 (PDF: {room.pdf_id})")
             
             # 사용자 메시지 저장 (단계 정보 포함)
             user_msg = models.Message(
@@ -1329,13 +1334,40 @@ async def websocket_endpoint_with_feynman(
             try:
                 async with httpx.AsyncClient() as client:
                     print("🤖 Ollama 요청 중 (파인만 모드)...")
-                    
+
                     # Ollama에 시스템 프롬프트 포함
-                    if rag_context:
-                        full_prompt = f"{system_prompt}\n\n{rag_context}\n\n사용자: {user_message}\n\nAI:"
+                    if pdf_has_content:
+                        # PDF에 관련 내용이 있는 경우: PDF 기반으로만 답변하도록 강제
+                        full_prompt = f"""{system_prompt}
+
+{rag_context}
+
+**🔴 중요 지시사항 (반드시 준수):**
+1. 위에 제공된 PDF 자료의 내용만을 기반으로 답변하세요
+2. PDF 자료에 있는 개념, 용어, 설명, 과정을 그대로 사용하세요
+3. PDF 자료의 내용과 다르게 설명하지 마세요
+4. 당신의 학습된 지식이 PDF 내용과 다르더라도, PDF 내용을 우선하세요
+5. PDF에 나온 그대로의 표현과 설명 방식을 따르세요
+
+사용자: {user_message}
+
+AI:"""
+                    elif room.pdf_id:
+                        # PDF는 등록되어 있지만 관련 내용을 찾지 못한 경우
+                        full_prompt = f"""{system_prompt}
+
+**알림:** 등록된 PDF 자료에서 '{user_message}'와 관련된 내용을 찾을 수 없습니다.
+일반적인 지식을 바탕으로 답변하겠습니다.
+
+사용자: {user_message}
+
+AI:"""
                     else:
+                        # PDF가 등록되지 않은 경우: 일반 지식으로 답변
                         full_prompt = f"{system_prompt}\n\n사용자: {user_message}\n\nAI:"
+
                     print(f"📝 프롬프트 길이: {len(full_prompt)} 문자")
+                    print(f"📝 PDF 컨텍스트 사용: {pdf_has_content}")
                     print(f"📝 프롬프트 미리보기:\n{full_prompt[:500]}...")
                     
                     async with client.stream(
