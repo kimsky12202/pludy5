@@ -170,7 +170,15 @@ class AuthService {
   // 사용자 정보 저장
   static Future<void> _saveUserData(Map<String, dynamic> user) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userKey, json.encode(user));
+
+    // 개별 키로 저장 (auth_service.dart와 호환되도록)
+    final userId = user['id'] ?? user['user_id'];
+    await prefs.setInt('user_id', userId);
+    await prefs.setString('username', user['username']);
+    await prefs.setString('email', user['email']);
+
+    // 기존 JSON 형식 키는 제거 (마이그레이션)
+    await prefs.remove(_userKey);
   }
 
   // 저장된 토큰 가져오기
@@ -182,11 +190,21 @@ class AuthService {
   // 저장된 사용자 정보 가져오기
   static Future<Map<String, dynamic>?> getUserData() async {
     final prefs = await SharedPreferences.getInstance();
-    final userJson = prefs.getString(_userKey);
-    if (userJson != null) {
-      return json.decode(userJson);
+
+    // 개별 키로 읽기 (auth_service.dart와 호환)
+    final userId = prefs.getInt('user_id');
+    final username = prefs.getString('username');
+    final email = prefs.getString('email');
+
+    if (userId == null || username == null || email == null) {
+      return null;
     }
-    return null;
+
+    return {
+      'user_id': userId,
+      'username': username,
+      'email': email,
+    };
   }
 
   // 로그인 상태 확인
@@ -200,6 +218,11 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_userKey);
+
+    // 개별 키도 삭제
+    await prefs.remove('user_id');
+    await prefs.remove('username');
+    await prefs.remove('email');
   }
 
   // 인증 헤더 가져오기 (API 호출 시 사용)
