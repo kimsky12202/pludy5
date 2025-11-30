@@ -104,8 +104,9 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
         },
         backgroundColor: colorScheme.primary, // 흑/백 반전
         foregroundColor: colorScheme.onPrimary, // 백/흑 반전
-        icon: Icon(Icons.auto_awesome),
-        label: Text('AI 퀴즈 생성', style: TextStyle(fontWeight: FontWeight.bold)),
+        icon: Icon(Icons.auto_awesome, size: 18),
+        label: Text('AI 퀴즈 생성', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        extendedPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
     );
   }
@@ -117,26 +118,30 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 100,
-            height: 100,
+            width: 80,
+            height: 80,
             decoration: BoxDecoration(
               color: colorScheme.surface,
               shape: BoxShape.circle,
               border: Border.all(color: Colors.grey, width: 2),
             ),
-            child: Icon(Icons.quiz_outlined, size: 50, color: Colors.grey),
+            child: Icon(Icons.quiz_outlined, size: 35, color: Colors.grey),
           ),
           SizedBox(height: 20),
           Text(
             '아직 퀴즈가 없습니다',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 14,
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface, // 글자색 반전 (중요!)
             ),
           ),
           SizedBox(height: 6),
-          Text('첫 퀴즈를 만들어보세요!', style: TextStyle(color: Colors.grey)),
+          Text('첫 퀴즈를 만들어보세요!', style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey
+            )
+          ),
           SizedBox(height: 20),
           OutlinedButton.icon(
             onPressed: () {
@@ -148,9 +153,11 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
             style: OutlinedButton.styleFrom(
               foregroundColor: colorScheme.onSurface,
               side: BorderSide(color: colorScheme.onSurface),
+              padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),  // 버튼 내부 여백 크기 조절 
+              minimumSize: Size(120, 40),
             ),
-            icon: Icon(Icons.add),
-            label: Text('만들기'),
+            icon: Icon(Icons.add, size: 18),
+            label: Text('만들기', style: TextStyle(fontSize: 14)),
           ),
         ],
       ),
