@@ -153,18 +153,23 @@ class UserProvider with ChangeNotifier {
   // ========== 퀴즈 ==========
 
   Future<void> loadQuizzes() async {
-    if (_userId == null) return;
+    if (_userId == null) {
+      debugPrint('❌ loadQuizzes: userId is null!');
+      return;
+    }
 
+    debugPrint('📚 loadQuizzes: Loading quizzes for user $_userId');
     _isLoadingQuizzes = true;
     _quizzesError = null;
     notifyListeners();
 
     try {
       _quizzes = await _quizApiService.getUserQuizzes(_userId!);
+      debugPrint('✅ loadQuizzes: Loaded ${_quizzes.length} quizzes');
       _quizzesError = null;
     } catch (e) {
       _quizzesError = '퀴즈 목록을 불러오는데 실패했습니다: $e';
-      debugPrint(_quizzesError);
+      debugPrint('❌ loadQuizzes error: $_quizzesError');
     } finally {
       _isLoadingQuizzes = false;
       notifyListeners();
@@ -191,7 +196,7 @@ class UserProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> deleteQuiz(int quizId) async {
+  Future<bool> deleteQuiz(String quizId) async {
     try {
       await _quizApiService.deleteQuiz(quizId);
       _quizzes.removeWhere((q) => q.id == quizId);
@@ -205,7 +210,7 @@ class UserProvider with ChangeNotifier {
 
   // [추가] 퀴즈 질문 수정
   Future<bool> updateQuestion(
-    int questionId,
+    String questionId,
     QuizQuestion updatedQuestion,
   ) async {
     try {
@@ -243,7 +248,7 @@ class UserProvider with ChangeNotifier {
   }
 
   Future<bool> submitQuizProgress({
-    required int quizId,
+    required String quizId,
     required List<Map<String, dynamic>> results,
   }) async {
     try {

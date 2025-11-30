@@ -9,8 +9,8 @@ enum QuestionType {
 
 // 퀴즈 전체 정보
 class Quiz {
-  final int? id;
-  final int? userId;
+  final String? id;
+  final String? userId;
   final String quizName;
   final List<QuizQuestion> questions;
   final DateTime? createdAt;
@@ -27,8 +27,8 @@ class Quiz {
 
   factory Quiz.fromJson(Map<String, dynamic> json) {
     return Quiz(
-      id: json['id'] as int?,
-      userId: json['user_id'] as int?,
+      id: json['id']?.toString(),
+      userId: json['user_id']?.toString(),
       quizName: json['quiz_name'] as String,
       questions:
           (json['questions'] as List<dynamic>?)
@@ -60,8 +60,8 @@ class Quiz {
 
 // 퀴즈 질문
 class QuizQuestion {
-  final int? id;
-  final int? quizId;
+  final String? id;
+  final String? quizId;
   final String questionText;
   final QuestionType questionType;
   final List<QuizAnswer> answers;
@@ -90,8 +90,8 @@ class QuizQuestion {
             : QuestionType.multipleChoice;
 
     return QuizQuestion(
-      id: json['id'] as int?,
-      quizId: json['quiz_id'] as int?,
+      id: json['id']?.toString(),
+      quizId: json['quiz_id']?.toString(),
       questionText: json['question_text'] as String,
       questionType: questionType,
       answers:
@@ -150,8 +150,8 @@ class QuizQuestion {
 
 // 퀴즈 답변
 class QuizAnswer {
-  final int? id;
-  final int? questionId;
+  final String? id;
+  final String? questionId;
   final String answerText;
   final bool isCorrect;
   final int answerOrder;
@@ -166,8 +166,8 @@ class QuizAnswer {
 
   factory QuizAnswer.fromJson(Map<String, dynamic> json) {
     return QuizAnswer(
-      id: json['id'] as int?,
-      questionId: json['question_id'] as int?,
+      id: json['id']?.toString(),
+      questionId: json['question_id']?.toString(),
       answerText: json['answer_text'] as String,
       isCorrect: json['is_correct'] as bool,
       answerOrder: json['answer_order'] as int? ?? 0,
@@ -187,9 +187,9 @@ class QuizAnswer {
 
 // 사용자 진행 상황
 class UserProgress {
-  final int? id;
-  final int userId;
-  final int questionId;
+  final String? id;
+  final String userId;
+  final String questionId;
   final DateTime lastAttempted;
   final int correctCount;
   final int totalAttempts;
@@ -207,9 +207,9 @@ class UserProgress {
 
   factory UserProgress.fromJson(Map<String, dynamic> json) {
     return UserProgress(
-      id: json['id'] as int?,
-      userId: json['user_id'] as int,
-      questionId: json['question_id'] as int,
+      id: json['id']?.toString(),
+      userId: json['user_id'].toString(),
+      questionId: json['question_id'].toString(),
       lastAttempted: DateTime.parse(json['last_attempted']),
       correctCount: json['correct_count'] as int,
       totalAttempts: json['total_attempts'] as int,
