@@ -227,18 +227,24 @@ async def extract_concept_keyword(user_message: str) -> str:
     extraction_prompt = f"""다음 질문에서 학습하고자 하는 핵심 개념/키워드만 추출하세요.
 질문: {user_message}
 
-규칙:
-- 2-3단어 이내의 핵심 개념만 추출
+중요 규칙:
+- 키워드만 출력하세요 (설명 금지)
+- 2-5단어 이내의 핵심 개념만
 - "에 대해", "알려줘", "설명해줘" 등은 제외
 - 명사형으로 추출
-- 한 줄로만 답변
+- "키워드는", "추출한", "에서" 같은 설명 단어 사용 금지
+- 오직 키워드만 출력
 
-예시:
+좋은 예:
 질문: "자료구조에 대해서 알려줘" → 자료구조
 질문: "머신러닝 알고리즘 설명해줘" → 머신러닝 알고리즘
 질문: "양자역학이 뭐야?" → 양자역학
+질문: "입출력 모듈의 과정" → 입출력 모듈, 프로세싱, 데이터 전달
 
-키워드:"""
+나쁜 예:
+질문: "자료구조에 대해서 알려줘" → 자료구조에서 추출한 키워드는 자료구조입니다.
+
+키워드만 출력:"""
 
     try:
         async with httpx.AsyncClient() as client:
@@ -256,10 +262,21 @@ async def extract_concept_keyword(user_message: str) -> str:
             if response.status_code == 200:
                 result = response.json()
                 keyword = result.get("response", "").strip()
+
                 # 첫 줄만 가져오기 (추가 설명 제거)
                 keyword = keyword.split('\n')[0].strip()
+
+                # "에서 추출한 키워드는", "키워드:" 등의 패턴 제거
+                import re
+                # "~에서 추출한 키워드는" 패턴 제거
+                keyword = re.sub(r'.*(에서\s*추출한\s*키워드는?|키워드는?)\s*', '', keyword)
+                # "입니다", ".", ":" 등 제거
+                keyword = re.sub(r'[.:!?]$', '', keyword)
+                keyword = keyword.replace('입니다', '').replace('습니다', '').strip()
+
                 # 따옴표 제거
                 keyword = keyword.strip('"\'')
+
                 print(f"✅ 추출된 키워드: '{keyword}'")
                 return keyword if keyword else user_message
             else:
