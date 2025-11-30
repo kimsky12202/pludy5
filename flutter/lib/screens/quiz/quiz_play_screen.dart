@@ -16,7 +16,7 @@ class QuizPlayScreen extends StatefulWidget {
 
 class _QuizPlayScreenState extends State<QuizPlayScreen> {
   int _currentQuestionIndex = 0;
-  final Map<int, dynamic> _userAnswers = {}; // questionId -> answer
+  final Map<String, dynamic> _userAnswers = {}; // questionId -> answer
   final TextEditingController _shortAnswerController = TextEditingController();
 
   @override

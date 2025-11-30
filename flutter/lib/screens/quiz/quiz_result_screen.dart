@@ -4,7 +4,7 @@ import '../../models/quiz_models.dart';
 
 class QuizResultScreen extends StatelessWidget {
   final Quiz quiz;
-  final Map<int, dynamic> userAnswers;
+  final Map<String, dynamic> userAnswers;
   final int correctCount;
 
   const QuizResultScreen({
