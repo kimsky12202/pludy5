@@ -243,7 +243,7 @@ class _KnowledgeCheckScreenState extends State<KnowledgeCheckScreen>
 
                       // 안내 텍스트
                       Text(
-                        '솔직하게 답변해주세요.\n모르는 것은 부끄러운 게 아니에요!',
+                        '솔직하게 답변해주세요.\n모르는 것은 부끄러운 게 아닙니다!',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 14,
