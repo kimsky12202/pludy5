@@ -19,7 +19,7 @@ class QuizApiService {
   }
 
   // 사용자의 퀴즈 목록 조회
-  Future<List<Quiz>> getUserQuizzes(int userId) async {
+  Future<List<Quiz>> getUserQuizzes(String userId) async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/users/$userId/quizzes'),
@@ -119,7 +119,7 @@ class QuizApiService {
   }
 
   // 복습이 필요한 질문 조회
-  Future<List<QuizQuestion>> getReviewQuestions(int userId) async {
+  Future<List<QuizQuestion>> getReviewQuestions(String userId) async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/users/$userId/progress?review_due=true'),
