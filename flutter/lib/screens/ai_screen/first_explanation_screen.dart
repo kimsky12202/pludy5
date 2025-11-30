@@ -21,11 +21,12 @@ class FirstExplanationScreen extends StatefulWidget {
 
 class _FirstExplanationScreenState extends State<FirstExplanationScreen>
     with SingleTickerProviderStateMixin {
-  
+
   final TextEditingController _inputController = TextEditingController();
   final SpeechService _speechService = SpeechService();
   bool _isLoading = false;
   bool _isRecording = false;
+  bool _isExpanded = false; // 키워드 텍스트 펼침 상태
   String _recognizedText = '';
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -33,7 +34,7 @@ class _FirstExplanationScreenState extends State<FirstExplanationScreen>
   @override
   void initState() {
     super.initState();
-    
+
     _animationController = AnimationController(
       duration: Duration(milliseconds: 500),
       vsync: this,
@@ -55,7 +56,7 @@ class _FirstExplanationScreenState extends State<FirstExplanationScreen>
       print('🎤 녹음 중지. 인식된 텍스트: "$_recognizedText"');
       await _speechService.stopListening();
       setState(() => _isRecording = false);
-      
+
       if (_recognizedText.isEmpty) {
         print('⚠️ 인식된 텍스트가 없습니다');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -63,7 +64,7 @@ class _FirstExplanationScreenState extends State<FirstExplanationScreen>
         );
         return;
       }
-      
+
       print('📤 제출 시작: $_recognizedText');
       await _submitWithText(_recognizedText);
     } else {
@@ -77,12 +78,12 @@ class _FirstExplanationScreenState extends State<FirstExplanationScreen>
         );
         return;
       }
-      
+
       setState(() {
         _isRecording = true;
         _recognizedText = '';
       });
-      
+
       await _speechService.startListening(
         onResult: (text) {
           print('🎤 인식 중: $text');
@@ -91,14 +92,14 @@ class _FirstExplanationScreenState extends State<FirstExplanationScreen>
           });
         },
       );
-      
+
       // 1초마다 체크, 녹음 중이 아니면 바로 재시작
       _restartTimer = Timer.periodic(Duration(seconds: 1), (timer) async {
         if (!_isRecording) {
           timer.cancel();
           return;
         }
-        
+
         if (!_speechService.isListening) {
           print('⏰ 타이머: 녹음 중지 감지 → 재시작');
           await _speechService.restart();
@@ -113,13 +114,13 @@ class _FirstExplanationScreenState extends State<FirstExplanationScreen>
   // 텍스트로 제출
   Future<void> _submitWithText(String text) async {
     if (text.trim().isEmpty) return;
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
       await ApiService.saveMessage(widget.roomId, text, 'first_explanation');
       await ApiService.transitionPhase(widget.roomId, null);
-      
+
       Navigator.pushReplacementNamed(
         context,
         '/first_reflection',
@@ -143,30 +144,23 @@ class _FirstExplanationScreenState extends State<FirstExplanationScreen>
     await _submitWithText(_inputController.text.trim());
   }
 
-    
-    
+
+
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return WillPopScope(
-    onWillPop: () async => false,
-    child: Scaffold(
+      onWillPop: () async => false,
+      child: Scaffold(
         appBar: AppBar(
           title: Text('파인만 학습'),
-          backgroundColor: Colors.blue,
-          foregroundColor: Colors.white,
-          elevation: 0,
           automaticallyImplyLeading: false,
         ),
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.blue.shade50, Colors.white],
-            ),
-          ),
-          child: SafeArea(
+        body: SafeArea(
+          child: SingleChildScrollView( // 스크롤 가능하도록 추가
             child: Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
@@ -175,62 +169,96 @@ class _FirstExplanationScreenState extends State<FirstExplanationScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      SizedBox(height: 40), // 상단 여백
+
                       // 아이콘
                       Container(
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade100,
+                          color: colorScheme.primary.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.edit_note,
                           size: 60,
-                          color: Colors.blue.shade700,
+                          color: colorScheme.primary,
                         ),
                       ),
-                      
+
                       SizedBox(height: 40),
-                      
-                      // 개념 표시
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade100,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          widget.concept,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade900,
+
+                      // 개념 표시 (펼치기/접기 기능)
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _isExpanded = !_isExpanded;
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: Duration(milliseconds: 300),
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: colorScheme.primary.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                widget.concept,
+                                textAlign: TextAlign.center,
+                                maxLines: _isExpanded ? null : 1,
+                                overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 19, // 요구사항: 크기 19
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                              if (widget.concept.length > 20) // 긴 텍스트인 경우에만 표시
+                                Padding(
+                                  padding: EdgeInsets.only(top: 4),
+                                  child: Icon(
+                                    _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                    size: 20,
+                                    color: colorScheme.primary,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),
-                      
+
                       SizedBox(height: 30),
-                      
+
                       // 질문
                       Text(
                         '알고 있는 만큼\n자유롭게 설명해주세요',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: 17, // 22 → 17 (5 줄임)
                           fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade800,
+                          color: colorScheme.onSurface.withOpacity(0.7),
                           height: 1.4,
                         ),
                       ),
-                      
+
                       SizedBox(height: 60),
-                      
+
                       // 입력 영역
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: colorScheme.surface,
                           borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: colorScheme.outline.withOpacity(0.3),
+                            width: 1,
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black12,
@@ -247,9 +275,14 @@ class _FirstExplanationScreenState extends State<FirstExplanationScreen>
                               decoration: InputDecoration(
                                 hintText: '여기에 입력하세요...',
                                 border: InputBorder.none,
-                                hintStyle: TextStyle(color: Colors.grey.shade400),
+                                hintStyle: TextStyle(
+                                  color: colorScheme.onSurface.withOpacity(0.3),
+                                ),
                               ),
-                              style: TextStyle(fontSize: 16),
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: colorScheme.onSurface,
+                              ),
                             ),
                             SizedBox(height: 12),
                             Row(
@@ -261,7 +294,9 @@ class _FirstExplanationScreenState extends State<FirstExplanationScreen>
                                     icon: Icon(_isRecording ? Icons.stop : Icons.mic),
                                     label: Text(_isRecording ? '중지' : '음성'),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: _isRecording ? Colors.red : Colors.green,
+                                      backgroundColor: _isRecording
+                                          ? colorScheme.error
+                                          : Colors.green,
                                       foregroundColor: Colors.white,
                                       padding: EdgeInsets.symmetric(vertical: 16),
                                       shape: RoundedRectangleBorder(
@@ -278,8 +313,8 @@ class _FirstExplanationScreenState extends State<FirstExplanationScreen>
                                     icon: Icon(Icons.send),
                                     label: Text('전송'),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
-                                      foregroundColor: Colors.white,
+                                      backgroundColor: colorScheme.primary,
+                                      foregroundColor: colorScheme.onPrimary,
                                       padding: EdgeInsets.symmetric(vertical: 16),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(15),
@@ -292,12 +327,14 @@ class _FirstExplanationScreenState extends State<FirstExplanationScreen>
                           ],
                         ),
                       ),
-                      
+
                       if (_isLoading)
                         Padding(
                           padding: EdgeInsets.only(top: 20),
                           child: CircularProgressIndicator(),
                         ),
+
+                      SizedBox(height: 40), // 하단 여백
                     ],
                   ),
                 ),
@@ -311,7 +348,7 @@ class _FirstExplanationScreenState extends State<FirstExplanationScreen>
 
   @override
   void dispose() {
-     _restartTimer?.cancel();
+    _restartTimer?.cancel();
     _animationController.dispose();
     _inputController.dispose();
     _speechService.dispose();
