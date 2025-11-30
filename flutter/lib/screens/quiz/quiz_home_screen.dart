@@ -71,6 +71,9 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
     final quizzes = userProvider.quizzes;
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('퀴즈'),
+      ),
       // 배경색은 main.dart 테마 따름
       body:
           _isLoading
