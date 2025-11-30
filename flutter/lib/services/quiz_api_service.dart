@@ -64,7 +64,7 @@ class QuizApiService {
   }
 
   // 퀴즈 상세 조회
-  Future<Quiz> getQuizDetail(int quizId) async {
+  Future<Quiz> getQuizDetail(String quizId) async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/quizzes/$quizId'),
@@ -83,7 +83,7 @@ class QuizApiService {
   }
 
   // 퀴즈 삭제
-  Future<void> deleteQuiz(int quizId) async {
+  Future<void> deleteQuiz(String quizId) async {
     try {
       final response = await http.delete(
         Uri.parse('$baseUrl/quizzes/$quizId'),
@@ -100,9 +100,9 @@ class QuizApiService {
 
   // 퀴즈 진행 상황 제출
   Future<void> submitProgress({
-    required int quizId,
+    required String quizId,
     required List<Map<String, dynamic>> results,
-  }) async {
+  }) async{
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/progress'),
@@ -157,7 +157,7 @@ class QuizApiService {
   }
 
   // [추가됨] 퀴즈 질문 수정하기
-  Future<bool> updateQuestion(int questionId, QuizQuestion question) async {
+  Future<bool> updateQuestion(String questionId, QuizQuestion question) async {
     try {
       final url = Uri.parse('$baseUrl/questions/$questionId');
       final headers = await _getHeaders();

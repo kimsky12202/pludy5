@@ -43,7 +43,7 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
   }
 
   // [기능 유지 2] 퀴즈 삭제
-  Future<void> _deleteQuiz(int quizId) async {
+  Future<void> _deleteQuiz(String quizId) async {
     try {
       final success = await Provider.of<UserProvider>(
         context,
