@@ -32,7 +32,7 @@ class User {
 
 class AuthToken {
   final String token;
-  final int userId;
+  final String userId;
   final String username;
   final String email;
 
@@ -44,9 +44,10 @@ class AuthToken {
   });
 
   factory AuthToken.fromJson(Map<String, dynamic> json) {
+    final userIdValue = json['user_id'];
     return AuthToken(
       token: json['token'] as String,
-      userId: json['user_id'] as int,
+      userId: userIdValue is int ? userIdValue.toString() : userIdValue as String,
       username: json['username'] as String,
       email: json['email'] as String,
     );

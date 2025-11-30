@@ -93,7 +93,7 @@ class AIQuizService {
   Future<void> saveQuiz({
     required String quizName,
     required List<dynamic> questions,
-    required int userId,
+    required String userId,
   }) async {
     try {
       final token = await _authService.getToken();
