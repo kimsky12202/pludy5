@@ -12,7 +12,7 @@ class UserProvider with ChangeNotifier {
   final QuizApiService _quizApiService = QuizApiService();
 
   // 사용자 정보
-  int? _userId;
+  String? _userId;
   String? _username;
   String? _email;
   bool _isLoggedIn = false;
@@ -27,7 +27,7 @@ class UserProvider with ChangeNotifier {
   bool _isLoadingReview = false;
 
   // Getters
-  int? get userId => _userId;
+  String? get userId => _userId;
   String? get username => _username;
   String? get email => _email;
   bool get isLoggedIn => _isLoggedIn;
@@ -43,7 +43,7 @@ class UserProvider with ChangeNotifier {
     // 저장된 사용자 정보 불러오기
     final userInfo = await _authService.getUserInfo();
     if (userInfo != null) {
-      _userId = userInfo['user_id'] as int;
+      _userId = userInfo['user_id'] as String;
       _username = userInfo['username'] as String;
       _email = userInfo['email'] as String;
       _isLoggedIn = true;

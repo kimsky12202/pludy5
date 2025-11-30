@@ -27,9 +27,9 @@ class AuthService {
   }
 
   // 사용자 정보 저장
-  Future<void> saveUserInfo(int userId, String username, String email) async {
+  Future<void> saveUserInfo(String userId, String username, String email) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('user_id', userId);
+    await prefs.setString('user_id', userId);
     await prefs.setString('username', username);
     await prefs.setString('email', email);
   }
@@ -37,7 +37,7 @@ class AuthService {
   // 사용자 정보 가져오기
   Future<Map<String, dynamic>?> getUserInfo() async {
     final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getInt('user_id');
+    final userId = prefs.getString('user_id');
     final username = prefs.getString('username');
     final email = prefs.getString('email');
 

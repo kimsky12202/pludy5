@@ -173,7 +173,7 @@ class AuthService {
 
     // 개별 키로 저장 (auth_service.dart와 호환되도록)
     final userId = user['id'] ?? user['user_id'];
-    await prefs.setInt('user_id', userId);
+    await prefs.setString('user_id', userId.toString());
     await prefs.setString('username', user['username']);
     await prefs.setString('email', user['email']);
 
@@ -192,7 +192,7 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
 
     // 개별 키로 읽기 (auth_service.dart와 호환)
-    final userId = prefs.getInt('user_id');
+    final userId = prefs.getString('user_id');
     final username = prefs.getString('username');
     final email = prefs.getString('email');
 
