@@ -113,7 +113,8 @@ class AIQuizService {
                     (q['answers'] as List)
                         .map(
                           (a) => {
-                            'answer_text': a['answer_text'],
+                            // answer_text를 반드시 문자열로 변환 (AI가 boolean을 반환하는 경우 대비)
+                            'answer_text': a['answer_text']?.toString() ?? '',
                             'is_correct': a['is_correct'] ?? false,
                             'answer_order': a['answer_order'] ?? 0,
                           },
@@ -125,7 +126,7 @@ class AIQuizService {
                 'question_text': q['question_text'],
                 'question_type': 'short_answer',
                 'question_order': index,  // 인덱스로 순서 설정
-                'correct_answer': q['correct_answer'],
+                'correct_answer': q['correct_answer']?.toString() ?? '',
               };
             }
           }).toList();
