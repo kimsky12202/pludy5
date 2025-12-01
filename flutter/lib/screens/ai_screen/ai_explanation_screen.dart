@@ -1,5 +1,6 @@
 // lib/screens/ai_explanation_screen.dart (수정본)
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../../services/websocket_service.dart';
 import '../../services/api_service.dart';
 
@@ -233,16 +234,59 @@ class _AIExplanationScreenState extends State<AIExplanationScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                _aiExplanation.isEmpty
-                                    ? '설명을 기다리는 중...'
-                                    : _aiExplanation,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  height: 1.6,
-                                  color: colorScheme.onSurface,
-                                ),
-                              ),
+                              _aiExplanation.isEmpty
+                                  ? Text(
+                                      '설명을 기다리는 중...',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        height: 1.6,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                    )
+                                  : MarkdownBody(
+                                      data: _aiExplanation,
+                                      styleSheet: MarkdownStyleSheet(
+                                        p: TextStyle(
+                                          fontSize: 16,
+                                          height: 1.6,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                        h1: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                        h2: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                        h3: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                        strong: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                        listBullet: TextStyle(
+                                          fontSize: 16,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                        code: TextStyle(
+                                          fontSize: 14,
+                                          fontFamily: 'monospace',
+                                          backgroundColor: colorScheme.surfaceContainerHighest,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                        blockquote: TextStyle(
+                                          fontSize: 16,
+                                          fontStyle: FontStyle.italic,
+                                          color: colorScheme.onSurface.withOpacity(0.8),
+                                        ),
+                                      ),
+                                    ),
                               if (_isTyping)
                                 Padding(
                                   padding: EdgeInsets.only(top: 12),
