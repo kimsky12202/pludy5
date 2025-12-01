@@ -245,6 +245,7 @@ class _AIExplanationScreenState extends State<AIExplanationScreen> {
                                     )
                                   : MarkdownBody(
                                       data: _aiExplanation,
+                                      softLineBreak: true, // 단일 줄바꿈도 실제 줄바꿈으로 처리
                                       styleSheet: MarkdownStyleSheet(
                                         p: TextStyle(
                                           fontSize: 16,
