@@ -271,7 +271,7 @@ class _FirstExplanationScreenState extends State<FirstExplanationScreen>
                           children: [
                             TextField(
                               controller: _inputController,
-                              maxLines: 5,
+                              maxLines: 3, // 5 → 3 (높이 줄임)
                               decoration: InputDecoration(
                                 hintText: '여기에 입력하세요...',
                                 border: InputBorder.none,
@@ -295,9 +295,11 @@ class _FirstExplanationScreenState extends State<FirstExplanationScreen>
                                     label: Text(_isRecording ? '중지' : '음성'),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: _isRecording
-                                          ? colorScheme.error
-                                          : Colors.green,
-                                      foregroundColor: Colors.white,
+                                          ? Colors.red // 녹음 중: 빨간색 유지
+                                          : colorScheme.secondary, // 녹음 대기: Black&White 적용
+                                      foregroundColor: _isRecording
+                                          ? Colors.white
+                                          : colorScheme.onSecondary,
                                       padding: EdgeInsets.symmetric(vertical: 16),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(15),

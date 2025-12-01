@@ -873,9 +873,9 @@ async def upload_pdf(
         with open(file_path, "wb") as buffer:
             while chunk := await file.read(chunk_size):
                 file_size += len(chunk)
-                if file_size > 50 * 1024 * 1024:  # 50MB 제한
+                if file_size > 500 * 1024 * 1024:  # 500MB 제한
                     os.remove(file_path)
-                    raise HTTPException(status_code=400, detail="파일 크기는 50MB 이하여야 합니다")
+                    raise HTTPException(status_code=400, detail="파일 크기는 500MB 이하여야 합니다")
                 buffer.write(chunk)
         
         # PDF 페이지 수 확인
