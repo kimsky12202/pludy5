@@ -71,9 +71,7 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
     final quizzes = userProvider.quizzes;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('퀴즈'),
-      ),
+      appBar: AppBar(title: const Text('퀴즈')),
       // 배경색은 main.dart 테마 따름
       body:
           _isLoading
@@ -105,7 +103,10 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
         backgroundColor: colorScheme.primary, // 흑/백 반전
         foregroundColor: colorScheme.onPrimary, // 백/흑 반전
         icon: Icon(Icons.auto_awesome, size: 18),
-        label: Text('AI 퀴즈 생성', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        label: Text(
+          'AI 퀴즈 생성',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        ),
         extendedPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
     );
@@ -137,10 +138,9 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
             ),
           ),
           SizedBox(height: 6),
-          Text('첫 퀴즈를 만들어보세요!', style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey
-            )
+          Text(
+            '첫 퀴즈를 만들어보세요!',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
           SizedBox(height: 20),
           OutlinedButton.icon(
@@ -153,7 +153,10 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
             style: OutlinedButton.styleFrom(
               foregroundColor: colorScheme.onSurface,
               side: BorderSide(color: colorScheme.onSurface),
-              padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),  // 버튼 내부 여백 크기 조절 
+              padding: EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 12,
+              ), // 버튼 내부 여백 크기 조절
               minimumSize: Size(120, 40),
             ),
             icon: Icon(Icons.add, size: 18),
