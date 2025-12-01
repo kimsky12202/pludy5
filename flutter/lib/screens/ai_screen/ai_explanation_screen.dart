@@ -24,7 +24,7 @@ class AIExplanationScreen extends StatefulWidget {
 class _AIExplanationScreenState extends State<AIExplanationScreen> {
   final WebSocketService _wsService = WebSocketService();
   final ScrollController _scrollController = ScrollController();
-  
+
   String _aiExplanation = '';
   bool _isLoading = true;
   bool _isTyping = false;
@@ -53,7 +53,7 @@ class _AIExplanationScreenState extends State<AIExplanationScreen> {
         }
       });
     });
-    
+
     // AI 설명 요청 메시지 전송
     Future.delayed(Duration(milliseconds: 500), () {
       if (widget.explanation != null && widget.reflection != null) {
@@ -85,7 +85,7 @@ class _AIExplanationScreenState extends State<AIExplanationScreen> {
   try {
     // 추가: API 호출
     await ApiService.transitionPhase(widget.roomId, null);
-    
+
     Navigator.pushReplacementNamed(
       context,
       '/second_explanation',
@@ -106,11 +106,12 @@ class _AIExplanationScreenState extends State<AIExplanationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.concept),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
@@ -120,213 +121,206 @@ class _AIExplanationScreenState extends State<AIExplanationScreen> {
           ),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade50,
-              Colors.white,
-            ],
-          ),
-        ),
-        child: Column(
-          children: [
-            // 헤더
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.school,
-                    size: 50,
-                    color: Colors.blue.shade700,
-                  ),
-                  SizedBox(height: 12),
-                  Text(
-                    'AI 선생님의 설명',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade900,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            Divider(height: 1),
-            
-            // AI 설명 내용
-            Expanded(
-              child: _isLoading
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(),
-                          SizedBox(height: 20),
-                          Text(
-                            'AI가 설명을 준비하고 있어요...',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : SingleChildScrollView(
-                      controller: _scrollController,
-                      padding: EdgeInsets.all(24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 개념 박스
-                          Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.blue.shade200,
-                                width: 2,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.lightbulb_outline,
-                                  color: Colors.blue.shade700,
-                                  size: 28,
-                                ),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    widget.concept,
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue.shade900,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          
-                          SizedBox(height: 24),
-                          
-                          // AI 설명
-                          Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 10,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _aiExplanation.isEmpty 
-                                      ? '설명을 기다리는 중...' 
-                                      : _aiExplanation,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    height: 1.6,
-                                    color: Colors.grey.shade800,
-                                  ),
-                                ),
-                                if (_isTyping)
-                                  Padding(
-                                    padding: EdgeInsets.only(top: 12),
-                                    child: Row(
-                                      children: [
-                                        SizedBox(
-                                          width: 16,
-                                          height: 16,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'AI가 입력 중...',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontStyle: FontStyle.italic,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          
-                          SizedBox(height: 80),
-                        ],
-                      ),
-                    ),
-            ),
-            
-            // 하단 버튼
-            if (!_isLoading)
-              Container(
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 10,
-                      offset: Offset(0, -2),
-                    ),
-                  ],
+      body: Column(
+        children: [
+          // 헤더
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(20),
+            color: colorScheme.surface,
+            child: Column(
+              children: [
+                Icon(
+                  Icons.school,
+                  size: 50,
+                  color: colorScheme.primary,
                 ),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _goToSecondExplanation,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Row(
+                SizedBox(height: 12),
+                Text(
+                  'AI 선생님의 설명',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Divider(height: 1),
+
+          // AI 설명 내용
+          Expanded(
+            child: _isLoading
+                ? Center(
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.arrow_forward),
-                        SizedBox(width: 8),
+                        CircularProgressIndicator(),
+                        SizedBox(height: 20),
                         Text(
-                          '다음 단계로',
+                          'AI가 설명을 준비하고 있어요...',
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: colorScheme.onSurface.withOpacity(0.6),
                           ),
                         ),
                       ],
                     ),
+                  )
+                : SingleChildScrollView(
+                    controller: _scrollController,
+                    padding: EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 개념 박스
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: colorScheme.primary.withOpacity(0.3),
+                              width: 2,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.lightbulb_outline,
+                                color: colorScheme.primary,
+                                size: 28,
+                              ),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  widget.concept,
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        SizedBox(height: 24),
+
+                        // AI 설명
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: colorScheme.outline.withOpacity(0.3),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 10,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _aiExplanation.isEmpty
+                                    ? '설명을 기다리는 중...'
+                                    : _aiExplanation,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  height: 1.6,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                              if (_isTyping)
+                                Padding(
+                                  padding: EdgeInsets.only(top: 12),
+                                  child: Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'AI가 입력 중...',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontStyle: FontStyle.italic,
+                                          color: colorScheme.onSurface.withOpacity(0.6),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+
+                        SizedBox(height: 80),
+                      ],
+                    ),
+                  ),
+          ),
+
+          // 하단 버튼
+          if (!_isLoading)
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 10,
+                    offset: Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _goToSecondExplanation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.arrow_forward),
+                      SizedBox(width: 8),
+                      Text(
+                        '다음 단계로',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
