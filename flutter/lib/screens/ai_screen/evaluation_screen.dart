@@ -1,5 +1,6 @@
 // lib/screens/evaluation_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../../services/websocket_service.dart';
 import '../../services/api_service.dart';
 
@@ -98,11 +99,12 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('학습 평가'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
@@ -127,29 +129,19 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
           ),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade50,
-              Colors.white,
-            ],
-          ),
-        ),
-        child: Column(
+      body: Column(
           children: [
             // 헤더
             Container(
               width: double.infinity,
               padding: EdgeInsets.all(20),
+              color: colorScheme.surface,
               child: Column(
                 children: [
                   Icon(
                     Icons.assessment,
                     size: 50,
-                    color: Colors.blue.shade700,
+                    color: colorScheme.primary,
                   ),
                   SizedBox(height: 12),
                   Text(
@@ -157,7 +149,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade900,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   SizedBox(height: 8),
@@ -165,14 +157,14 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                     '당신의 학습 과정을 분석했습니다',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey.shade600,
+                      color: colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
                 ],
               ),
             ),
-            
-            Divider(height: 1),
+
+            Divider(height: 1, color: colorScheme.outline.withOpacity(0.2)),
             
             // 평가 내용
             Expanded(
@@ -187,7 +179,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                             'AI가 평가를 작성하고 있어요...',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.grey.shade600,
+                              color: colorScheme.onSurface.withOpacity(0.6),
                             ),
                           ),
                         ],
@@ -204,10 +196,10 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                             width: double.infinity,
                             padding: EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.green.shade50,
+                              color: colorScheme.primaryContainer,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.green.shade200,
+                                color: colorScheme.primary.withOpacity(0.3),
                                 width: 2,
                               ),
                             ),
@@ -215,7 +207,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                               children: [
                                 Icon(
                                   Icons.emoji_events,
-                                  color: Colors.green.shade700,
+                                  color: colorScheme.primary,
                                   size: 28,
                                 ),
                                 SizedBox(width: 12),
@@ -228,7 +220,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.green.shade900,
+                                          color: colorScheme.onPrimaryContainer,
                                         ),
                                       ),
                                       SizedBox(height: 4),
@@ -237,7 +229,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                                         style: TextStyle(
                                           fontSize: 20,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.green.shade700,
+                                          color: colorScheme.onPrimaryContainer,
                                         ),
                                       ),
                                     ],
@@ -246,7 +238,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                               ],
                             ),
                           ),
-                          
+
                           SizedBox(height: 24),
                           
                           // 평가 내용
@@ -254,8 +246,12 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                             width: double.infinity,
                             padding: EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: colorScheme.surface,
                               borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: colorScheme.outline.withOpacity(0.3),
+                                width: 1,
+                              ),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black12,
@@ -267,16 +263,60 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  _evaluation.isEmpty 
-                                      ? '평가를 기다리는 중...' 
-                                      : _evaluation,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    height: 1.6,
-                                    color: Colors.grey.shade800,
-                                  ),
-                                ),
+                                _evaluation.isEmpty
+                                    ? Text(
+                                        '평가를 기다리는 중...',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          height: 1.6,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                      )
+                                    : MarkdownBody(
+                                        data: _evaluation,
+                                        softLineBreak: true, // 단락 구분을 위한 줄바꿈 처리
+                                        styleSheet: MarkdownStyleSheet(
+                                          p: TextStyle(
+                                            fontSize: 16,
+                                            height: 1.6,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                          h1: TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.bold,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                          h2: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                          h3: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                          strong: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                          listBullet: TextStyle(
+                                            fontSize: 16,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                          code: TextStyle(
+                                            fontSize: 14,
+                                            fontFamily: 'monospace',
+                                            backgroundColor: colorScheme.surfaceContainerHighest,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                          blockquote: TextStyle(
+                                            fontSize: 16,
+                                            fontStyle: FontStyle.italic,
+                                            color: colorScheme.onSurface.withOpacity(0.8),
+                                          ),
+                                        ),
+                                      ),
                                 if (_isTyping)
                                   Padding(
                                     padding: EdgeInsets.only(top: 12),
@@ -295,7 +335,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontStyle: FontStyle.italic,
-                                            color: Colors.grey.shade600,
+                                            color: colorScheme.onSurface.withOpacity(0.6),
                                           ),
                                         ),
                                       ],
@@ -316,7 +356,13 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
               Container(
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface,
+                  border: Border(
+                    top: BorderSide(
+                      color: colorScheme.outline.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black12,
@@ -354,8 +400,8 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey.shade300,
-                          foregroundColor: Colors.grey.shade700,
+                          backgroundColor: colorScheme.secondaryContainer,
+                          foregroundColor: colorScheme.onSecondaryContainer,
                           padding: EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -398,8 +444,8 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
+                          backgroundColor: colorScheme.primary,
+                          foregroundColor: colorScheme.onPrimary,
                           padding: EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -426,7 +472,6 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
               ),
           ],
         ),
-      ),
     );
   }
 
