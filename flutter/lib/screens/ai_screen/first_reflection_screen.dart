@@ -23,12 +23,13 @@ class FirstReflectionScreen extends StatefulWidget {
 
 class _FirstReflectionScreenState extends State<FirstReflectionScreen>
     with SingleTickerProviderStateMixin {
-  
+
   final TextEditingController _inputController = TextEditingController();
-  final SpeechService _speechService = SpeechService(); 
+  final SpeechService _speechService = SpeechService();
   bool _isRecording = false;
   String _recognizedText = '';
   bool _isLoading = false;
+  bool _isExpanded = false; // 키워드 텍스트 펼침 상태
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -146,25 +147,18 @@ class _FirstReflectionScreenState extends State<FirstReflectionScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return WillPopScope(
-    onWillPop: () async => false,
-    child: Scaffold(
+      onWillPop: () async => false,
+      child: Scaffold(
         appBar: AppBar(
           title: Text('파인만 학습'),
-          backgroundColor: Colors.blue,
-          foregroundColor: Colors.white,
-          elevation: 0,
           automaticallyImplyLeading: false,
         ),
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.blue.shade50, Colors.white],
-            ),
-          ),
-          child: SafeArea(
+        body: SafeArea(
+          child: SingleChildScrollView( // 스크롤 가능하도록 추가
             child: Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
@@ -173,62 +167,96 @@ class _FirstReflectionScreenState extends State<FirstReflectionScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      SizedBox(height: 40), // 상단 여백
+
                       // 아이콘
                       Container(
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade100,
+                          color: colorScheme.primary.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.edit_note,
                           size: 60,
-                          color: Colors.blue.shade700,
+                          color: colorScheme.primary,
                         ),
                       ),
-                      
+
                       SizedBox(height: 40),
-                      
-                      // 개념 표시
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade100,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          widget.concept,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade900,
+
+                      // 개념 표시 (펼치기/접기 기능)
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _isExpanded = !_isExpanded;
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: Duration(milliseconds: 300),
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: colorScheme.primary.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                widget.concept,
+                                textAlign: TextAlign.center,
+                                maxLines: _isExpanded ? null : 1,
+                                overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 19, // 요구사항: 크기 19
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                              if (widget.concept.length > 20) // 긴 텍스트인 경우에만 표시
+                                Padding(
+                                  padding: EdgeInsets.only(top: 4),
+                                  child: Icon(
+                                    _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                    size: 20,
+                                    color: colorScheme.primary,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),
-                      
+
                       SizedBox(height: 30),
-                      
+
                       // 질문
                       Text(
                         '설명하면서 막혔던 부분이나\n확신이 없었던 부분을 말해주세요',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: 17, // 22 → 17 (5 줄임)
                           fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade800,
+                          color: colorScheme.onSurface.withOpacity(0.7),
                           height: 1.4,
                         ),
                       ),
-                      
+
                       SizedBox(height: 60),
-                      
-                      // 입력 영역 (first_explanation과 똑같은 UI)
+
+                      // 입력 영역
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: colorScheme.surface,
                           borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: colorScheme.outline.withOpacity(0.3),
+                            width: 1,
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black12,
@@ -241,25 +269,35 @@ class _FirstReflectionScreenState extends State<FirstReflectionScreen>
                           children: [
                             TextField(
                               controller: _inputController,
-                              maxLines: 5,
+                              maxLines: 3, // 5 → 3 (높이 줄임)
                               decoration: InputDecoration(
                                 hintText: '여기에 입력하세요...',
                                 border: InputBorder.none,
-                                hintStyle: TextStyle(color: Colors.grey.shade400),
+                                hintStyle: TextStyle(
+                                  color: colorScheme.onSurface.withOpacity(0.3),
+                                ),
                               ),
-                              style: TextStyle(fontSize: 16),
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: colorScheme.onSurface,
+                              ),
                             ),
                             SizedBox(height: 12),
                             Row(
                               children: [
+                                // 마이크 버튼
                                 Expanded(
                                   child: ElevatedButton.icon(
                                     onPressed: _isLoading ? null : _toggleRecording,
                                     icon: Icon(_isRecording ? Icons.stop : Icons.mic),
                                     label: Text(_isRecording ? '중지' : '음성'),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: _isRecording ? Colors.red : Colors.green,
-                                      foregroundColor: Colors.white,
+                                      backgroundColor: _isRecording
+                                          ? Colors.red // 녹음 중: 빨간색 유지
+                                          : colorScheme.secondary, // 녹음 대기: Black&White 적용
+                                      foregroundColor: _isRecording
+                                          ? Colors.white
+                                          : colorScheme.onSecondary,
                                       padding: EdgeInsets.symmetric(vertical: 16),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(15),
@@ -268,14 +306,15 @@ class _FirstReflectionScreenState extends State<FirstReflectionScreen>
                                   ),
                                 ),
                                 SizedBox(width: 12),
+                                // 텍스트 전송 버튼
                                 Expanded(
                                   child: ElevatedButton.icon(
                                     onPressed: _isLoading ? null : _handleSubmit,
                                     icon: Icon(Icons.send),
                                     label: Text('전송'),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
-                                      foregroundColor: Colors.white,
+                                      backgroundColor: colorScheme.primary,
+                                      foregroundColor: colorScheme.onPrimary,
                                       padding: EdgeInsets.symmetric(vertical: 16),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(15),
@@ -288,12 +327,14 @@ class _FirstReflectionScreenState extends State<FirstReflectionScreen>
                           ],
                         ),
                       ),
-                      
+
                       if (_isLoading)
                         Padding(
                           padding: EdgeInsets.only(top: 20),
                           child: CircularProgressIndicator(),
                         ),
+
+                      SizedBox(height: 40), // 하단 여백
                     ],
                   ),
                 ),
