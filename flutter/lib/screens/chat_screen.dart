@@ -443,17 +443,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(_currentRoom?.title ?? 'AI Chat'),
-            if (_currentPhase != null && _currentPhase!.title.isNotEmpty)
-              Text(
-                _currentPhase!.title,
-                style: TextStyle(fontSize: 12),
-              ),
-          ],
-        ),
+        title: Text(_currentRoom?.title ?? 'AI Chat'),
         elevation: 2,
         leading: IconButton(
           icon: Icon(_showChatList ? Icons.chat : Icons.menu),
@@ -667,10 +657,12 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildInputArea() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
             offset: Offset(0, -2),
@@ -743,11 +735,13 @@ class ChatMessage {
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
   final bool isTyping;
-  
+
   ChatBubble({required this.message, this.isTyping = false});
-  
+
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Align(
       alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -757,7 +751,9 @@ class ChatBubble extends StatelessWidget {
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
         decoration: BoxDecoration(
-          color: message.isUser ? Colors.blue : Colors.grey[200],
+          color: message.isUser
+              ? colorScheme.inverseSurface // 라이트: 검은색, 다크: 흰색
+              : colorScheme.surfaceVariant,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -766,7 +762,9 @@ class ChatBubble extends StatelessWidget {
             Text(
               message.text,
               style: TextStyle(
-                color: message.isUser ? Colors.white : Colors.black87,
+                color: message.isUser
+                    ? colorScheme.onInverseSurface
+                    : colorScheme.onSurfaceVariant,
               ),
             ),
             if (isTyping)
@@ -777,7 +775,9 @@ class ChatBubble extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     fontStyle: FontStyle.italic,
-                    color: message.isUser ? Colors.white70 : Colors.black54,
+                    color: message.isUser
+                        ? colorScheme.onInverseSurface.withOpacity(0.7)
+                        : colorScheme.onSurfaceVariant.withOpacity(0.7),
                   ),
                 ),
               ),
