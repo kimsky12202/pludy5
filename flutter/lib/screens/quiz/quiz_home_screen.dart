@@ -18,11 +18,92 @@ class QuizHomeScreen extends StatefulWidget {
 class _QuizHomeScreenState extends State<QuizHomeScreen> {
   final QuizService _quizService = QuizService();
   bool _isLoading = true;
+  bool _isSelectionMode = false;
+  Set<String> _selectedQuizIds = {};
 
   @override
   void initState() {
     super.initState();
     _loadQuizzes();
+  }
+
+  // 선택 모드 토글
+  void _toggleSelectionMode() {
+    setState(() {
+      _isSelectionMode = !_isSelectionMode;
+      if (!_isSelectionMode) {
+        _selectedQuizIds.clear();
+      }
+    });
+  }
+
+  // 퀴즈 선택 토글
+  void _toggleQuizSelection(String quizId) {
+    setState(() {
+      if (_selectedQuizIds.contains(quizId)) {
+        _selectedQuizIds.remove(quizId);
+      } else {
+        _selectedQuizIds.add(quizId);
+      }
+    });
+  }
+
+  // 선택된 퀴즈들 삭제
+  Future<void> _deleteSelectedQuizzes() async {
+    if (_selectedQuizIds.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        title: Text(
+          '퀴즈 삭제',
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        ),
+        content: Text(
+          '선택한 ${_selectedQuizIds.length}개의 퀴즈를 삭제하시겠습니까?',
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('취소', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('삭제', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+      // 선택된 퀴즈들을 하나씩 삭제
+      for (final quizId in _selectedQuizIds) {
+        await userProvider.deleteQuiz(quizId);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${_selectedQuizIds.length}개의 퀴즈가 삭제되었습니다')),
+        );
+
+        setState(() {
+          _selectedQuizIds.clear();
+          _isSelectionMode = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('삭제 실패: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   // [기능 유지 1] 퀴즈 목록 불러오기
@@ -72,7 +153,25 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
     final quizzes = userProvider.quizzes;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('퀴즈')),
+      appBar: AppBar(
+        title: _isSelectionMode
+            ? Text('${_selectedQuizIds.length}개 선택됨')
+            : const Text('퀴즈'),
+        actions: [
+          if (_isSelectionMode)
+            IconButton(
+              icon: Icon(Icons.close),
+              onPressed: _toggleSelectionMode,
+              tooltip: '취소',
+            )
+          else
+            IconButton(
+              icon: Icon(Icons.checklist),
+              onPressed: _toggleSelectionMode,
+              tooltip: '선택',
+            ),
+        ],
+      ),
       // 배경색은 main.dart 테마 따름
       body:
           _isLoading
@@ -93,8 +192,18 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
                 ),
               ),
 
-      // [기능 유지 3] 플로팅 버튼 (수동 추가 + AI 생성)
-      floatingActionButton: Column(
+      // [기능 유지 3] 플로팅 버튼 (수동 추가 + AI 생성) 또는 삭제 버튼
+      floatingActionButton: _isSelectionMode
+          ? _selectedQuizIds.isNotEmpty
+              ? FloatingActionButton.extended(
+                  onPressed: _deleteSelectedQuizzes,
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  icon: Icon(Icons.delete),
+                  label: Text('삭제 (${_selectedQuizIds.length})'),
+                )
+              : null
+          : Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // 수동 퀴즈 추가 버튼
@@ -227,21 +336,36 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
 
   // [기능 유지 5] 퀴즈 카드 아이템
   Widget _buildQuizCard(Quiz quiz, ColorScheme colorScheme) {
+    final isSelected = _selectedQuizIds.contains(quiz.id);
+
     return Card(
       margin: EdgeInsets.only(bottom: 12),
       // Card 색상은 main.dart의 theme에서 자동 적용됨
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => QuizPlayScreen(quiz: quiz)),
-          ).then((_) => _loadQuizzes());
+          if (_isSelectionMode) {
+            _toggleQuizSelection(quiz.id!);
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => QuizPlayScreen(quiz: quiz)),
+            ).then((_) => _loadQuizzes());
+          }
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: EdgeInsets.all(16),
           child: Row(
             children: [
+              // 선택 모드일 때 체크박스 표시
+              if (_isSelectionMode) ...[
+                Checkbox(
+                  value: isSelected,
+                  onChanged: (value) => _toggleQuizSelection(quiz.id!),
+                  activeColor: colorScheme.primary,
+                ),
+                SizedBox(width: 8),
+              ],
               Container(
                 width: 56,
                 height: 56,
@@ -274,63 +398,64 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
                   ],
                 ),
               ),
-              // 수정 및 삭제 버튼
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.edit, color: Colors.blue),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => QuizEditScreen(quiz: quiz),
-                        ),
-                      ).then((_) => _loadQuizzes());
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.delete_outline, color: Colors.red),
-                    onPressed: () {
-                      // 삭제 확인 다이얼로그
-                      showDialog(
-                        context: context,
-                        builder:
-                            (context) => AlertDialog(
-                              backgroundColor: colorScheme.surface,
-                              title: Text(
-                                '퀴즈 삭제',
-                                style: TextStyle(color: colorScheme.onSurface),
-                              ),
-                              content: Text(
-                                '정말 삭제하시겠습니까?',
-                                style: TextStyle(color: colorScheme.onSurface),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: Text(
-                                    '취소',
-                                    style: TextStyle(color: Colors.grey),
-                                  ),
+              // 선택 모드가 아닐 때만 수정 및 삭제 버튼 표시
+              if (!_isSelectionMode)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.edit, color: Colors.blue),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => QuizEditScreen(quiz: quiz),
+                          ),
+                        ).then((_) => _loadQuizzes());
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete_outline, color: Colors.red),
+                      onPressed: () {
+                        // 삭제 확인 다이얼로그
+                        showDialog(
+                          context: context,
+                          builder:
+                              (context) => AlertDialog(
+                                backgroundColor: colorScheme.surface,
+                                title: Text(
+                                  '퀴즈 삭제',
+                                  style: TextStyle(color: colorScheme.onSurface),
                                 ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    _deleteQuiz(quiz.id!);
-                                  },
-                                  child: Text(
-                                    '삭제',
-                                    style: TextStyle(color: Colors.red),
-                                  ),
+                                content: Text(
+                                  '정말 삭제하시겠습니까?',
+                                  style: TextStyle(color: colorScheme.onSurface),
                                 ),
-                              ],
-                            ),
-                      );
-                    },
-                  ),
-                ],
-              ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Text(
+                                      '취소',
+                                      style: TextStyle(color: Colors.grey),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      _deleteQuiz(quiz.id!);
+                                    },
+                                    child: Text(
+                                      '삭제',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
