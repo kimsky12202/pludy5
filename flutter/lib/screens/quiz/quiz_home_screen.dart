@@ -98,41 +98,47 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // 수동 퀴즈 추가 버튼
-          FloatingActionButton.extended(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => QuizCreateScreen()),
-              ).then((_) => _loadQuizzes());
-            },
-            backgroundColor: colorScheme.primary,
-            foregroundColor: colorScheme.onPrimary,
-            icon: Icon(Icons.edit, size: 18),
-            label: Text(
-              '수동 퀴즈 추가',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          SizedBox(
+            width: 130,
+            child: FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => QuizCreateScreen()),
+                ).then((_) => _loadQuizzes());
+              },
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              icon: Icon(Icons.edit, size: 18),
+              label: Text(
+                '수동 추가',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              extendedPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              heroTag: 'manual_quiz',
             ),
-            extendedPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            heroTag: 'manual_quiz', // 여러 FAB 사용 시 고유 태그 필요
           ),
           SizedBox(height: 12),
           // AI 퀴즈 생성 버튼
-          FloatingActionButton.extended(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AIQuizGenerateScreen()),
-              ).then((_) => _loadQuizzes());
-            },
-            backgroundColor: colorScheme.primary,
-            foregroundColor: colorScheme.onPrimary,
-            icon: Icon(Icons.auto_awesome, size: 18),
-            label: Text(
-              'AI 퀴즈 생성',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          SizedBox(
+            width: 130,
+            child: FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AIQuizGenerateScreen()),
+                ).then((_) => _loadQuizzes());
+              },
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              icon: Icon(Icons.auto_awesome, size: 18),
+              label: Text(
+                'AI 생성',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              extendedPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              heroTag: 'ai_quiz',
             ),
-            extendedPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            heroTag: 'ai_quiz', // 여러 FAB 사용 시 고유 태그 필요
           ),
         ],
       ),
