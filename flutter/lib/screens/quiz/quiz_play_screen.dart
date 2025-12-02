@@ -167,6 +167,20 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                         color: colorScheme.onSurface,
                       ),
                     ),
+
+                    // 이미지 표시
+                    if (_currentQuestion.imageBytes != null) ...[
+                      SizedBox(height: 24),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.memory(
+                          _currentQuestion.imageBytes!,
+                          width: double.infinity,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ],
+
                     SizedBox(height: 32),
 
                     // 답변 입력
