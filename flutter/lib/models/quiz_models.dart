@@ -1,5 +1,6 @@
 // lib/models/quiz_models.dart
 import 'dart:typed_data';
+import 'dart:convert';
 
 // 문제 유형 enum
 enum QuestionType {
@@ -89,6 +90,16 @@ class QuizQuestion {
             ? QuestionType.shortAnswer
             : QuestionType.multipleChoice;
 
+    // Base64 이미지 데이터 디코딩
+    Uint8List? imageBytes;
+    if (json['image_data'] != null && json['image_data'] != '') {
+      try {
+        imageBytes = base64Decode(json['image_data']);
+      } catch (e) {
+        print('이미지 디코딩 실패: $e');
+      }
+    }
+
     return QuizQuestion(
       id: json['id']?.toString(),
       quizId: json['quiz_id']?.toString(),
@@ -109,7 +120,7 @@ class QuizQuestion {
           json['created_at'] != null
               ? DateTime.parse(json['created_at'])
               : null,
-      imageBytes: null,
+      imageBytes: imageBytes,
     );
   }
 
@@ -128,6 +139,7 @@ class QuizQuestion {
         'correct_answer': correctAnswer,
       'question_order': questionOrder,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
+      if (imageBytes != null) 'image_data': base64Encode(imageBytes!),
     };
   }
 

@@ -158,6 +158,7 @@ class QuizQuestion(Base):
     question_type = Column(String(50), default="multiple_choice")  # multiple_choice, short_answer
     question_order = Column(Integer, nullable=False)
     correct_answer = Column(Text, nullable=True)  # 서술형 정답용
+    image_data = Column(Text, nullable=True)  # Base64 인코딩된 이미지 데이터
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
