@@ -2,10 +2,10 @@
 퀴즈 질문에 이미지 필드 추가 마이그레이션
 """
 from sqlalchemy import create_engine, text
-from database import SQLALCHEMY_DATABASE_URL
+from database import DATABASE_URL
 
 def migrate():
-    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+    engine = create_engine(DATABASE_URL)
 
     with engine.connect() as conn:
         # image_data 컬럼 추가
