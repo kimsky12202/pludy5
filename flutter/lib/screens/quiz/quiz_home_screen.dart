@@ -179,7 +179,7 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
                   radius: 16,
                   backgroundColor: colorScheme.primary,
                   child: Text(
-                    userProvider.nickname?.substring(0, 1).toUpperCase() ?? 'U',
+                    userProvider.username?.substring(0, 1).toUpperCase() ?? 'U',
                     style: TextStyle(
                       color: colorScheme.onPrimary,
                       fontWeight: FontWeight.bold,
@@ -188,7 +188,7 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
                 ),
                 SizedBox(width: 8),
                 Text(
-                  userProvider.nickname ?? '사용자',
+                  userProvider.username ?? '사용자',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
