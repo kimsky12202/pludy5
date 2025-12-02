@@ -382,7 +382,7 @@ class _QuizCreateScreenState extends State<QuizCreateScreen> {
               SizedBox(height: 12),
               Stack(
                 children: [
-                  ClipRRRect(
+                  ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.memory(
                       question.imageBytes!,
