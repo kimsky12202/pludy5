@@ -16,11 +16,121 @@ class QuizEditScreen extends StatefulWidget {
 class _QuizEditScreenState extends State<QuizEditScreen> {
   // 화면 진입 시 질문 목록을 복사해둠
   late List<QuizQuestion> _questions;
+  late String _quizName;
 
   @override
   void initState() {
     super.initState();
     _questions = List.from(widget.quiz.questions);
+    _quizName = widget.quiz.quizName;
+  }
+
+  // 제목 수정 팝업
+  void _showTitleEditDialog() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final titleController = TextEditingController(text: _quizName);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Text(
+          '퀴즈 제목 수정',
+          style: TextStyle(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: TextField(
+          controller: titleController,
+          autofocus: true,
+          style: TextStyle(color: colorScheme.onSurface),
+          decoration: InputDecoration(
+            labelText: '퀴즈 제목',
+            labelStyle: TextStyle(color: colorScheme.secondary),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: colorScheme.outline),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: colorScheme.outline),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: colorScheme.primary, width: 2),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              titleController.dispose();
+              Navigator.pop(context);
+            },
+            child: Text(
+              '취소',
+              style: TextStyle(
+                color: colorScheme.secondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              final newTitle = titleController.text.trim();
+              if (newTitle.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('퀴즈 제목을 입력하세요'),
+                    backgroundColor: colorScheme.error,
+                  ),
+                );
+                return;
+              }
+
+              // UserProvider를 통해 서버에 전송
+              final success = await Provider.of<UserProvider>(
+                context,
+                listen: false,
+              ).updateQuiz(widget.quiz.id!, newTitle);
+
+              if (success && mounted) {
+                setState(() {
+                  _quizName = newTitle;
+                });
+                titleController.dispose();
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('퀴즈 제목이 수정되었습니다'),
+                    backgroundColor: colorScheme.primary,
+                  ),
+                );
+              } else if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('퀴즈 제목 수정에 실패했습니다'),
+                    backgroundColor: colorScheme.error,
+                  ),
+                );
+              }
+            },
+            child: Text(
+              '저장',
+              style: TextStyle(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // 수정 팝업 띄우기
@@ -107,11 +217,21 @@ class _QuizEditScreenState extends State<QuizEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.quiz.quizName} 수정'),
+        title: Text('$_quizName 수정'),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.edit, color: Colors.white),
+            tooltip: '제목 수정',
+            onPressed: _showTitleEditDialog,
+          ),
+        ],
       ),
       body: ListView.separated(
         padding: EdgeInsets.all(16),

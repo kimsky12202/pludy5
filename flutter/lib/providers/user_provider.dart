@@ -229,6 +229,25 @@ class UserProvider with ChangeNotifier {
     }
   }
 
+  // [추가] 퀴즈 제목 수정
+  Future<bool> updateQuiz(String quizId, String quizName) async {
+    try {
+      final updatedQuiz = await _quizApiService.updateQuiz(quizId, quizName);
+
+      // 로컬 목록에서 해당 퀴즈 업데이트
+      final index = _quizzes.indexWhere((q) => q.id == quizId);
+      if (index != -1) {
+        _quizzes[index] = updatedQuiz;
+        notifyListeners();
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('퀴즈 제목 수정 오류: $e');
+      return false;
+    }
+  }
+
   // ========== 복습 ==========
 
   Future<void> loadReviewQuestions() async {

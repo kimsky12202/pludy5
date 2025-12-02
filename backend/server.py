@@ -668,6 +668,9 @@ class QuizResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class QuizUpdate(BaseModel):
+    quiz_name: str
+
 class ProgressSubmit(BaseModel):
     results: List[Dict]  # [{"question_id": "...", "is_correct": True/False}, ...]
 
@@ -1861,6 +1864,30 @@ async def delete_quiz(
 
     print(f"🗑️ 퀴즈 삭제됨: {quiz_name}")
     return {"message": "퀴즈가 삭제되었습니다"}
+
+@app.put("/api/quizzes/{quiz_id}", response_model=QuizResponse)
+async def update_quiz(
+    quiz_id: str,
+    quiz_update: QuizUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """퀴즈 제목 수정"""
+    quiz = db.query(models.Quiz).filter(models.Quiz.id == quiz_id).first()
+    if not quiz:
+        raise HTTPException(status_code=404, detail="퀴즈를 찾을 수 없습니다")
+    if quiz.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="권한이 없습니다")
+
+    # 제목 업데이트
+    quiz.quiz_name = quiz_update.quiz_name
+    quiz.updated_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(quiz)
+
+    print(f"✏️ 퀴즈 제목 수정됨: {quiz.quiz_name}")
+    return quiz
 
 @app.post("/api/quizzes/generate-from-pdf")
 async def generate_quiz_from_pdf(

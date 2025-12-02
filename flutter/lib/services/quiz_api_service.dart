@@ -98,6 +98,26 @@ class QuizApiService {
     }
   }
 
+  // 퀴즈 제목 수정
+  Future<Quiz> updateQuiz(String quizId, String quizName) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/quizzes/$quizId'),
+        headers: await _getHeaders(),
+        body: jsonEncode({'quiz_name': quizName}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return Quiz.fromJson(data);
+      } else {
+        throw Exception('퀴즈 제목 수정 실패');
+      }
+    } catch (e) {
+      throw Exception('네트워크 오류: $e');
+    }
+  }
+
   // 퀴즈 진행 상황 제출
   Future<void> submitProgress({
     required String quizId,
