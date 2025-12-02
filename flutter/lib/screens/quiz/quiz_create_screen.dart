@@ -1,9 +1,11 @@
 // lib/screens/quiz_create_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:typed_data';
 import '../../providers/user_provider.dart';
 import '../../models/quiz_models.dart';
-import 'ai_quiz_generate_screen.dart'; // 추가!
+import 'ai_quiz_generate_screen.dart';
 
 class QuizCreateScreen extends StatefulWidget {
   const QuizCreateScreen({Key? key}) : super(key: key);
@@ -44,6 +46,31 @@ class _QuizCreateScreenState extends State<QuizCreateScreen> {
       _questions[index].dispose();
       _questions.removeAt(index);
     });
+  }
+
+  Future<void> _pickImage(QuestionFormData question) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
+
+      if (result != null && result.files.first.bytes != null) {
+        setState(() {
+          question.imageBytes = result.files.first.bytes;
+          question.imageName = result.files.first.name;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('이미지 선택 오류: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _submit() async {
@@ -106,6 +133,7 @@ class _QuizCreateScreenState extends State<QuizCreateScreen> {
                 questionType: QuestionType.multipleChoice,
                 answers: answers,
                 questionOrder: index,
+                imageBytes: data.imageBytes,
               );
             } else {
               return QuizQuestion(
@@ -113,6 +141,7 @@ class _QuizCreateScreenState extends State<QuizCreateScreen> {
                 questionType: QuestionType.shortAnswer,
                 correctAnswer: data.shortAnswerController.text.trim(),
                 questionOrder: index,
+                imageBytes: data.imageBytes,
               );
             }
           }).toList();
@@ -150,11 +179,13 @@ class _QuizCreateScreenState extends State<QuizCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text('퀴즈 만들기'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
         actions: [
           // AI 생성 버튼 추가!
           IconButton(
@@ -216,8 +247,9 @@ class _QuizCreateScreenState extends State<QuizCreateScreen> {
               icon: Icon(Icons.add),
               label: Text('질문 추가'),
               style: OutlinedButton.styleFrom(
+                foregroundColor: colorScheme.primary,
                 padding: EdgeInsets.symmetric(vertical: 16),
-                side: BorderSide(color: Colors.blue),
+                side: BorderSide(color: colorScheme.primary),
               ),
             ),
 
@@ -227,7 +259,8 @@ class _QuizCreateScreenState extends State<QuizCreateScreen> {
             ElevatedButton(
               onPressed: _isSubmitting ? null : _submit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -239,7 +272,7 @@ class _QuizCreateScreenState extends State<QuizCreateScreen> {
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: colorScheme.onPrimary,
                           strokeWidth: 2,
                         ),
                       )
@@ -248,7 +281,6 @@ class _QuizCreateScreenState extends State<QuizCreateScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
                         ),
                       ),
             ),
@@ -259,6 +291,8 @@ class _QuizCreateScreenState extends State<QuizCreateScreen> {
   }
 
   Widget _buildQuestionCard(int index, QuestionFormData question) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       elevation: 2,
       margin: EdgeInsets.only(bottom: 16),
@@ -329,6 +363,53 @@ class _QuizCreateScreenState extends State<QuizCreateScreen> {
                 return null;
               },
             ),
+
+            SizedBox(height: 16),
+
+            // 이미지 추가 버튼
+            OutlinedButton.icon(
+              onPressed: () => _pickImage(question),
+              icon: Icon(Icons.image, size: 18),
+              label: Text(question.imageBytes == null ? '이미지 추가' : '이미지 변경'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: colorScheme.primary,
+                side: BorderSide(color: colorScheme.primary),
+              ),
+            ),
+
+            // 이미지 미리보기
+            if (question.imageBytes != null) ...[
+              SizedBox(height: 12),
+              Stack(
+                children: [
+                  ClipRRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.memory(
+                      question.imageBytes!,
+                      height: 150,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: IconButton(
+                      icon: Icon(Icons.close, color: Colors.white),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.black54,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          question.imageBytes = null;
+                          question.imageName = null;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
 
             SizedBox(height: 16),
 
@@ -431,6 +512,10 @@ class QuestionFormData {
   int correctAnswerIndex = 0;
 
   final TextEditingController shortAnswerController = TextEditingController();
+
+  // 이미지 관련 필드
+  Uint8List? imageBytes;
+  String? imageName;
 
   void dispose() {
     questionController.dispose();
