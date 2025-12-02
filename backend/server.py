@@ -671,6 +671,16 @@ class QuizResponse(BaseModel):
 class QuizUpdate(BaseModel):
     quiz_name: str
 
+class QuizAnswerUpdate(BaseModel):
+    answer_text: str
+    is_correct: bool
+    answer_order: int
+
+class QuizQuestionUpdate(BaseModel):
+    question_text: str
+    correct_answer: Optional[str] = None
+    answers: Optional[List[QuizAnswerUpdate]] = None
+
 class ProgressSubmit(BaseModel):
     results: List[Dict]  # [{"question_id": "...", "is_correct": True/False}, ...]
 
@@ -1888,6 +1898,57 @@ async def update_quiz(
 
     print(f"✏️ 퀴즈 제목 수정됨: {quiz.quiz_name}")
     return quiz
+
+@app.put("/api/questions/{question_id}", response_model=QuizQuestionResponse)
+async def update_question(
+    question_id: str,
+    question_update: QuizQuestionUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """퀴즈 질문 수정"""
+    # 질문 조회
+    question = db.query(models.QuizQuestion).filter(
+        models.QuizQuestion.id == question_id
+    ).first()
+
+    if not question:
+        raise HTTPException(status_code=404, detail="질문을 찾을 수 없습니다")
+
+    # 퀴즈 소유권 확인
+    quiz = db.query(models.Quiz).filter(models.Quiz.id == question.quiz_id).first()
+    if not quiz or quiz.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="권한이 없습니다")
+
+    # 질문 텍스트 업데이트
+    question.question_text = question_update.question_text
+
+    # 서술형 정답 업데이트
+    if question_update.correct_answer is not None:
+        question.correct_answer = question_update.correct_answer
+
+    # 객관식 답변들 업데이트
+    if question_update.answers:
+        # 기존 답변들 삭제
+        db.query(models.QuizAnswer).filter(
+            models.QuizAnswer.question_id == question_id
+        ).delete()
+
+        # 새로운 답변들 추가
+        for answer_data in question_update.answers:
+            new_answer = models.QuizAnswer(
+                question_id=question_id,
+                answer_text=answer_data.answer_text,
+                is_correct=answer_data.is_correct,
+                answer_order=answer_data.answer_order
+            )
+            db.add(new_answer)
+
+    db.commit()
+    db.refresh(question)
+
+    print(f"✏️ 질문 수정됨: {question.question_text[:30]}...")
+    return question
 
 @app.post("/api/quizzes/generate-from-pdf")
 async def generate_quiz_from_pdf(
