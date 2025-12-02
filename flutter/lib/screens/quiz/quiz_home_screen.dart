@@ -170,6 +170,33 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
               onPressed: _toggleSelectionMode,
               tooltip: '선택',
             ),
+          // 유저 프로필 (닉네임)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: colorScheme.primary,
+                  child: Text(
+                    userProvider.nickname?.substring(0, 1).toUpperCase() ?? 'U',
+                    style: TextStyle(
+                      color: colorScheme.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8),
+                Text(
+                  userProvider.nickname ?? '사용자',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
       // 배경색은 main.dart 테마 따름
@@ -353,20 +380,13 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
           }
         },
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Row(
-            children: [
-              // 선택 모드일 때 체크박스 표시
-              if (_isSelectionMode) ...[
-                Checkbox(
-                  value: isSelected,
-                  onChanged: (value) => _toggleQuizSelection(quiz.id!),
-                  activeColor: colorScheme.primary,
-                ),
-                SizedBox(width: 8),
-              ],
-              Container(
+        child: Stack(
+          children: [
+            Padding(
+              padding: EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
@@ -456,9 +476,35 @@ class _QuizHomeScreenState extends State<QuizHomeScreen> {
                     ),
                   ],
                 ),
-            ],
+              ],
+            ),
           ),
-        ),
+          // 선택 모드일 때 왼쪽 위에 체크박스 표시
+          if (_isSelectionMode)
+            Positioned(
+              top: 8,
+              left: 8,
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: isSelected ? colorScheme.primary : colorScheme.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected ? colorScheme.primary : colorScheme.outline,
+                    width: 2,
+                  ),
+                ),
+                child: isSelected
+                    ? Icon(
+                        Icons.check,
+                        color: colorScheme.onPrimary,
+                        size: 16,
+                      )
+                    : null,
+              ),
+            ),
+        ],
       ),
     );
   }
