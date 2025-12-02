@@ -171,12 +171,17 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
                     // 이미지 표시
                     if (_currentQuestion.imageBytes != null) ...[
                       SizedBox(height: 24),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.memory(
-                          _currentQuestion.imageBytes!,
-                          width: double.infinity,
-                          fit: BoxFit.contain,
+                      Container(
+                        constraints: BoxConstraints(
+                          maxHeight: 300, // 최대 높이 제한
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.memory(
+                            _currentQuestion.imageBytes!,
+                            width: double.infinity,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
                     ],
