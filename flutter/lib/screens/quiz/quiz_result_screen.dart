@@ -1,6 +1,7 @@
 // lib/screens/quiz_result_screen.dart
 import 'package:flutter/material.dart';
 import '../../models/quiz_models.dart';
+import 'quiz_play_screen.dart';
 
 class QuizResultScreen extends StatelessWidget {
   final Quiz quiz;
@@ -157,8 +158,13 @@ class QuizResultScreen extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.pop(context);
-                      // 다시 풀기
+                      // 현재 결과 화면을 새로운 퀴즈 플레이 화면으로 교체
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => QuizPlayScreen(quiz: quiz),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: 16),
