@@ -458,56 +458,76 @@ class _AIQuizPreviewScreenState extends State<AIQuizPreviewScreen> {
                 final answer = entry.value;
                 final isCorrect = answer['is_correct'] == true;
 
-                return Container(
-                  margin: EdgeInsets.only(bottom: 8),
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isCorrect ? colorScheme.primary : colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isCorrect ? colorScheme.primary : colorScheme.outline,
-                      width: isCorrect ? 2 : 1,
+                return InkWell(
+                  onTap: () {
+                    setState(() {
+                      // 모든 선택지를 false로 설정
+                      for (var ans in question['answers']) {
+                        ans['is_correct'] = false;
+                      }
+                      // 선택한 선택지만 true로 설정
+                      answer['is_correct'] = true;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('정답이 ${idx + 1}번으로 변경되었습니다'),
+                        backgroundColor: colorScheme.primary,
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    margin: EdgeInsets.only(bottom: 8),
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isCorrect ? colorScheme.primary : colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isCorrect ? colorScheme.primary : colorScheme.outline,
+                        width: isCorrect ? 2 : 1,
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: isCorrect ? colorScheme.onPrimary : colorScheme.surface,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isCorrect ? colorScheme.onPrimary : colorScheme.outline,
-                            width: 2,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: isCorrect ? colorScheme.onPrimary : colorScheme.surface,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isCorrect ? colorScheme.onPrimary : colorScheme.outline,
+                              width: 2,
+                            ),
                           ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '${idx + 1}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: isCorrect ? colorScheme.primary : colorScheme.secondary,
+                          child: Center(
+                            child: Text(
+                              '${idx + 1}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: isCorrect ? colorScheme.primary : colorScheme.secondary,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          answer['answer_text']?.toString() ?? '',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isCorrect ? colorScheme.onPrimary : colorScheme.onSurface,
-                            fontWeight:
-                                isCorrect ? FontWeight.w600 : FontWeight.normal,
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            answer['answer_text']?.toString() ?? '',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isCorrect ? colorScheme.onPrimary : colorScheme.onSurface,
+                              fontWeight:
+                                  isCorrect ? FontWeight.w600 : FontWeight.normal,
+                            ),
                           ),
                         ),
-                      ),
-                      if (isCorrect)
-                        Icon(Icons.check_circle, color: colorScheme.onPrimary, size: 20),
-                    ],
+                        if (isCorrect)
+                          Icon(Icons.check_circle, color: colorScheme.onPrimary, size: 20),
+                      ],
+                    ),
                   ),
                 );
               }).toList(),
