@@ -13,3 +13,7 @@ chromadb==0.4.18
 sentence-transformers==2.2.2
 PyPDF2==3.0.1
 requests==2.31.0
+
+# Prevent pip from leaving stale 0.1.x builds that break langchain-classic / langgraph
+langchain-core>=1.0.0,<2.0.0
+langsmith>=0.1.17,<1.0.0
